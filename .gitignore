@@ -1,0 +1,14 @@
+*.*~
+.idea/*
+*.pyc
+__pycache__
+venv/
+local_settings.py
+media/
+.advista.log
+static/
+#test.py
+#uwsgi_params
+
+
+
