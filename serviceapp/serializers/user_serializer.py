@@ -11,26 +11,10 @@ class UserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(write_only=True)
     email = serializers.CharField(required=True)
     phone = serializers.CharField(required=False)
-    avatar = serializers.SerializerMethodField()
-    avatar_thumb = serializers.SerializerMethodField()
 
     class Meta:
         model = Users
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'is_active', 'is_superuser', 'password', 'confirm_password', 'phone', 'avatar', 'avatar_thumb')
-
-    def get_avatar(self, user):
-        if user.avatar:
-            avatar = user.avatar.url
-            return avatar
-        else:
-            return None
-
-    def get_avatar_thumb(self, user):
-        if user.avatar_thumb:
-            avatar_thumb = user.avatar_thumb.url
-            return avatar_thumb
-        else:
-            return None
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'is_active', 'is_superuser', 'password', 'confirm_password', 'phone')
 
     def create(self, validated_data):
         user_data = validated_data
