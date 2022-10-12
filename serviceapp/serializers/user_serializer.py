@@ -8,7 +8,7 @@ from serviceapp.models import Users
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(required=True, write_only=True)
     confirm_password = serializers.CharField(write_only=True)
-    username = serializers.CharField(write_only=True)
+    username = serializers.CharField(required=True)
     email = serializers.CharField(required=True)
     phone = serializers.CharField(required=False)
 
