@@ -56,15 +56,28 @@ class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.UpdateM
 
     def create(self, request, *args, **kwargs):
         with transaction.atomic():
-            serializer = UserSerializer(data=request.data)
+            user_info = request.data
+            serializer = UserSerializer(data=user_info)
             if serializer.is_valid():
                 obj = serializer.save()
+                response_data = serializer.data
+                if 'avatar' in request.FILES:
+                    updated_data = {}
+                    avatar = request.FILES['avatar']
+                    avatar_info = CommonView.handle_uploaded_file(avatar, obj)
+                    if 'path' in avatar_info:
+                        updated_data['avatar'] = avatar_info['path']
+                        updated_data['avatar_thumb'] = avatar_info['thumb_path']
+                        Users.objects.filter(id=obj.id).update(**updated_data)
+                        user = Users.objects.get(id=obj.id)
+                        user_serializer = UserSerializer(user)
+                        response_data = user_serializer.data
                 # verification_code = "".join(random.sample(string.digits, 5))
                 # obj.email_verification_token = verification_code
                 # obj.save()
                 # to = obj.email
                 # CommonView.send_verification_code(request, to, verification_code)
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(response_data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
@@ -105,10 +118,22 @@ class UserInfo(APIView):
             Users.objects.filter(id=request.user.id).update(**request.data)
             user = Users.objects.get(id=request.user.id)
             serializer = UserSerializer(user)
+            response_data = serializer.data
+            if 'avatar' in request.FILES:
+                updated_data = {}
+                avatar = request.FILES['avatar']
+                avatar_info = CommonView.handle_uploaded_file(avatar, user)
+                if 'path' in avatar_info:
+                    updated_data['avatar'] = avatar_info['path']
+                    updated_data['avatar_thumb'] = avatar_info['thumb_path']
+                    Users.objects.filter(id=user.id).update(**updated_data)
+                    user = Users.objects.get(id=user.id)
+                    user_serializer = UserSerializer(user)
+                    response_data = user_serializer.data
             # new_serializer_data = dict(serializer.data)
             # new_serializer_data['avatar'] = CommonView.get_file_path(new_serializer_data['avatar'])
             # new_serializer_data['avatar_thumb'] = CommonView.get_file_path(new_serializer_data['avatar_thumb'])
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(response_data, status=status.HTTP_200_OK)
         except Exception as e:
             LogHelper.efail(e)
             response = {

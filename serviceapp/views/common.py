@@ -75,6 +75,7 @@ class CommonView(generic.DetailView):
 
     def get_file_path(file):
         file = str(file)
+        print()
         file_path = ""
         try:
             file_path = settings.MEDIA_URL+file
