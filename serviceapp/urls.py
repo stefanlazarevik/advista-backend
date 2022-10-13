@@ -8,8 +8,8 @@ router.register(r'users', UserViewSet, basename='user')
 urlpatterns = [
     url(r'^auth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     url(r'^user-profile/', UserInfo.as_view()),
-    url(r'^email-verification/', UserInfo.email_verification),
-    url(r'^resend-verification-code/', UserInfo.resend_verification_code),
+    # url(r'^email-verification/', UserInfo.email_verification),
+    # url(r'^resend-verification-code/', UserInfo.resend_verification_code),
 
 ] + router.urls
 
