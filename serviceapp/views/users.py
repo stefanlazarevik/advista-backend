@@ -1,3 +1,5 @@
+import random
+import string
 
 from rest_framework.permissions import BasePermission
 from rest_framework import viewsets, status, mixins
@@ -6,6 +8,13 @@ from rest_framework.response import Response
 from serviceapp.models import Users
 from serviceapp.serializers.user_serializer import UserSerializer
 from django.db import transaction
+from rest_framework.decorators import api_view
+from django.core.exceptions import ObjectDoesNotExist
+
+from serviceapp.views.common import CommonView
+from serviceapp.views.helper import LogHelper
+from datetime import datetime, timedelta, date
+from django.conf import settings
 
 
 class UserProfilePermissions(BasePermission):
@@ -49,6 +58,11 @@ class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.UpdateM
             serializer = UserSerializer(data=request.data)
             if serializer.is_valid():
                 obj = serializer.save()
+                verification_code = "".join(random.sample(string.digits, 5))
+                obj.email_verification_token = verification_code
+                obj.save()
+                to = obj.email
+                CommonView.send_verification_code(request, to, verification_code)
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -84,6 +98,64 @@ class UserInfo(APIView):
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    @api_view(["post"])
+    def email_verification(request):
+        response = {}
+        try:
+            if request.user.is_authenticated:
+                response['success'] = True
+                response['message'] = "Already logged in"
+                return Response(response, status=status.HTTP_200_OK)
+            verification_code = request.data["code"]
+            uuid = request.data["uuid"]
+            user = Users.objects.get(email_verification_token=verification_code, uuid=uuid)
+            if user.email_expired_at > date.today():
+                user.is_verified = True
+                user.save()
+                response['success'] = True
+                response['message'] = "Email verified"
+                return Response(response, status=status.HTTP_200_OK)
+            else:
+                response['success'] = False
+                response['message'] = "Email authentication expired"
+                return Response(response, status=status.HTTP_400_BAD_REQUEST)
+        except ObjectDoesNotExist:
+            response['success'] = False
+            response['message'] = "Invaild Otp code"
+            return Response(response, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            LogHelper.efail(e)
+            response['success'] = False
+            response['message'] = "Something went wrong. Please try again"
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+    @api_view(["post"])
+    def resend_verification_code(request):
+        response = {}
+        try:
+            if request.user.is_authenticated:
+                response['success'] = True
+                response['message'] = "Already logged in"
+                return Response(response, status=status.HTTP_200_OK)
+            uuid = request.data["uuid"]
+            user = Users.objects.get(uuid=uuid)
+            verification_code = "".join(random.sample(string.digits, 5))
+            user.email_verification_token = verification_code
+            user.email_expired_at = datetime.now() + timedelta(minutes=5)
+            user.save()
+            response['success'] = True
+            response['message'] = "A new Verification has been sent"
+            return Response(response, status=status.HTTP_200_OK)
+        except ObjectDoesNotExist:
+            response['success'] = False
+            response['message'] = "Invaild Otp code"
+            return Response(response, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            LogHelper.efail(e)
+            response['success'] = False
+            response['message'] = "Something went wrong. Please try again"
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
 
 

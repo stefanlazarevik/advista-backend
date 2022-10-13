@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 from rest_framework import serializers
 from django.contrib.auth.hashers import make_password
@@ -11,10 +11,11 @@ class UserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=True)
     email = serializers.CharField(required=True)
     phone = serializers.CharField(required=False)
+    uuid = serializers.CharField(read_only=True)
 
     class Meta:
         model = Users
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'is_active', 'user_mode', 'is_superuser', 'password', 'confirm_password', 'phone')
+        fields = ('id', 'uuid', 'username', 'email', 'first_name', 'last_name', 'is_active', 'user_mode', 'is_superuser', 'password', 'confirm_password', 'phone')
 
     def create(self, validated_data):
         user_data = validated_data
@@ -31,6 +32,6 @@ class UserSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"message": "Passwords did not match"})
         user_data['password'] = make_password(password=password)
         user_data['is_active'] = False
-        user_data['email_expired_at'] = date.today() + timedelta(days=7)
+        user_data['email_expired_at'] = datetime.now() + timedelta(minutes=5)
         user = Users.objects.create(**user_data)
         return user
