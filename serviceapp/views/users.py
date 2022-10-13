@@ -83,19 +83,31 @@ class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.UpdateM
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        user_data = {}
-        if "is_active" in request.data:
-            user_data["is_active"] = request.data["is_active"]
-        serializer = self.get_serializer(instance, data=user_data, partial=partial)
+        # user_data = {}
+        # if "is_active" in request.data:
+        #     user_data["is_active"] = request.data["is_active"]
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+        response_data = serializer.data
+        if 'avatar' in request.FILES:
+            updated_data = {}
+            avatar = request.FILES['avatar']
+            avatar_info = CommonView.handle_uploaded_file(avatar, instance)
+            if 'path' in avatar_info:
+                updated_data['avatar'] = avatar_info['path']
+                updated_data['avatar_thumb'] = avatar_info['thumb_path']
+                Users.objects.filter(id=instance.id).update(**updated_data)
+                user = Users.objects.get(id=instance.id)
+                user_serializer = UserSerializer(user)
+                response_data = user_serializer.data
 
         if getattr(instance, '_prefetched_objects_cache', None):
             # If 'prefetch_related' has been applied to a queryset, we need to
             # forcibly invalidate the prefetch cache on the instance.
             instance._prefetched_objects_cache = {}
 
-        return Response(serializer.data)
+        return Response(response_data)
 
     def get_permissions(self):
         try:
@@ -115,7 +127,14 @@ class UserInfo(APIView):
 
     def post(self, request, *args, **kwargs ):
         try:
-            Users.objects.filter(id=request.user.id).update(**request.data)
+            user_data = {}
+            if "first_name" in request.data:
+                user_data["first_name"] = request.data["first_name"]
+            if "last_name" in request.data:
+                user_data["last_name"] = request.data["last_name"]
+            if "phone" in request.data:
+                user_data["phone"] = request.data["phone"]
+            Users.objects.filter(id=request.user.id).update(**user_data)
             user = Users.objects.get(id=request.user.id)
             serializer = UserSerializer(user)
             response_data = serializer.data
