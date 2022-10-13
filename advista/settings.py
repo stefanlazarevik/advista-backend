@@ -165,10 +165,10 @@ MEDIA_URL = '/media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-EMAIL_HOST_USER = 'workspaceinfotech@gmail.com'
-EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
-SENDGRID_API_KEY = "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"
-SENDGRID_SANDBOX_MODE_IN_DEBUG = False
+# EMAIL_HOST_USER = 'workspaceinfotech@gmail.com'
+# EMAIL_BACKEND = "sendgrid_backend.SendgridBackend"
+# SENDGRID_API_KEY = "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"
+# SENDGRID_SANDBOX_MODE_IN_DEBUG = False
 
 
 SITE_NAME = 'Advista'

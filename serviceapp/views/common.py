@@ -16,19 +16,19 @@ import threading
 
 class CommonView(generic.DetailView):
 
-    def send_verification_code(request, to, verification_code):
-        response = {}
-        try:
-            body = "Verification Code - " + str(verification_code)
-            subject = "Account Verification Code"
-            sender_mail = settings.EMAIL_HOST_USER
-            task = threading.Thread(target=MailHelper.mail_send, args=(body, subject, to, sender_mail))
-            task.start()
-            response['success'] = True
-        except Exception as e:
-            LogHelper.elog(e)
-            response['success'] = False
-        return HttpResponse(json.dumps(response), content_type='application/json')
+    # def send_verification_code(request, to, verification_code):
+    #     response = {}
+    #     try:
+    #         body = "Verification Code - " + str(verification_code)
+    #         subject = "Account Verification Code"
+    #         sender_mail = settings.EMAIL_HOST_USER
+    #         task = threading.Thread(target=MailHelper.mail_send, args=(body, subject, to, sender_mail))
+    #         task.start()
+    #         response['success'] = True
+    #     except Exception as e:
+    #         LogHelper.elog(e)
+    #         response['success'] = False
+    #     return HttpResponse(json.dumps(response), content_type='application/json')
 
     # Imaginary function to handle an uploaded file.
     def handle_uploaded_file(f, user=None):
