@@ -50,7 +50,7 @@ class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.UpdateM
     permission_classes_by_action = {'create': [UserCreatePermissions], 'list': [AdminPermissions], 'update': [AdminPermissions]}
 
     def get_queryset(self):
-        queryset = Users.objects.all().exclude(id=self.request.user.id).order_by('-id')
+        queryset = Users.objects.filter(is_verified=True).exclude(id=self.request.user.id).order_by('-id')
         return queryset
 
     def create(self, request, *args, **kwargs):
@@ -98,6 +98,22 @@ class UserInfo(APIView):
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(data=serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs ):
+        try:
+            Users.objects.filter(id=request.user.id).update(**request.data)
+            user = Users.objects.get(id=request.user.id)
+            serializer = UserSerializer(user)
+            # new_serializer_data = dict(serializer.data)
+            # new_serializer_data['avatar'] = CommonView.get_file_path(new_serializer_data['avatar'])
+            # new_serializer_data['avatar_thumb'] = CommonView.get_file_path(new_serializer_data['avatar_thumb'])
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            LogHelper.efail(e)
+            response = {
+                "message": "Something went wrong. please try again"
+            }
+            return Response(response, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @api_view(["post"])
     def email_verification(request):
