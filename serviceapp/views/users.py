@@ -61,17 +61,21 @@ class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.UpdateM
             if serializer.is_valid():
                 obj = serializer.save()
                 response_data = serializer.data
+                updated_data = {}
+                if request.user.is_authenticated:
+                    updated_data['created_by_id'] = request.user.id
                 if 'avatar' in request.FILES:
-                    updated_data = {}
                     avatar = request.FILES['avatar']
                     avatar_info = CommonView.handle_uploaded_file(avatar, obj)
                     if 'path' in avatar_info:
                         updated_data['avatar'] = avatar_info['path']
                         updated_data['avatar_thumb'] = avatar_info['thumb_path']
-                        Users.objects.filter(id=obj.id).update(**updated_data)
-                        user = Users.objects.get(id=obj.id)
-                        user_serializer = UserSerializer(user)
-                        response_data = user_serializer.data
+                if len(updated_data) != 0:
+                    Users.objects.filter(id=obj.id).update(**updated_data)
+                    user = Users.objects.get(id=obj.id)
+                    user_serializer = UserSerializer(user)
+                    response_data = user_serializer.data
+                    response_data['created_by_id'] = user.created_by_id
                 # verification_code = "".join(random.sample(string.digits, 5))
                 # obj.email_verification_token = verification_code
                 # obj.save()
@@ -90,17 +94,22 @@ class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.UpdateM
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         response_data = serializer.data
+        updated_data = {
+            "updated_by_id": request.user.id
+        }
         if 'avatar' in request.FILES:
-            updated_data = {}
             avatar = request.FILES['avatar']
             avatar_info = CommonView.handle_uploaded_file(avatar, instance)
             if 'path' in avatar_info:
                 updated_data['avatar'] = avatar_info['path']
                 updated_data['avatar_thumb'] = avatar_info['thumb_path']
-                Users.objects.filter(id=instance.id).update(**updated_data)
-                user = Users.objects.get(id=instance.id)
-                user_serializer = UserSerializer(user)
-                response_data = user_serializer.data
+        if len(updated_data) != 0:
+            Users.objects.filter(id=instance.id).update(**updated_data)
+            user = Users.objects.get(id=instance.id)
+            user_serializer = UserSerializer(user)
+            response_data = user_serializer.data
+            response_data['created_by_id'] = user.created_by_id
+            response_data['updated_by_id'] = user.updated_by_id
 
         if getattr(instance, '_prefetched_objects_cache', None):
             # If 'prefetch_related' has been applied to a queryset, we need to

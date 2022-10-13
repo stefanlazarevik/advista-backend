@@ -27,6 +27,8 @@ class Users(AbstractUser):
                                         FileExtensionValidator(allowed_extensions=['jpg', 'png', 'svg', 'jpeg'])],
                                     storage=FileSystemStorage())
     created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, related_name='user_created_by')
+    updated_by = models.ForeignKey("self", on_delete=models.SET_NULL, null=True,  related_name='user_updated_by')
     updated_at = models.DateTimeField(auto_now=True)
 
     # USERNAME_FIELD = 'email'
