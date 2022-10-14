@@ -2,10 +2,10 @@
 
 ## get server list
 set -e
-servers="3.93.182.243"
+servers=""
 all_servers=(${servers//,/ })
-username="wsit-mahedi"
-password="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"
+username=""
+password=""
 git_repo="https://${username}:${password}@github.com/midas19910709/Advista-project-backend.git"
 
 echo "ALL_SERVERS ${servers}"
