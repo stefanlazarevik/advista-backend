@@ -1,0 +1,32 @@
+stages:
+    - develop
+
+dev:
+    stage: develop
+    only:
+        - develop
+
+    before_script:
+        - mkdir -p ~/.ssh
+        - echo -e "AAABAHDdkBEw6MyJguNa9Nb4H3170reeLqLb17S45cdXEoGU9qr3S8FcLpm9D3b4
+            z4XlDvecgHkoKr1I+c2j0Ci2jAuzBExn0APkCqbDxtMovuTifs2X1WIrPpQDLoEl
+            7NGKT3R9yiPdEjkJOJe/JU0fNWlSZ/gBPVWNmiyZcjLNezlntdmnNHcop+RFQujy
+            6mpR1VS4snDbWHit2hNLBBW1u0ooAheMcF5v9dKnalbIzjZcnT0avRMcYq5nYibe
+            DBOi2QcdqtLka1lXORdG1Mb5DK+4jRMImKEPEXBGt016LxSY0v3d5zyuwNcotclW
+            S80d5ofyYUhAgc92E1uvwH7al+EAAACBAO2NQYmR5r2xJ0/JryZBwpY3MmHHdquh
+            YOtMtUL4XvMecj3hmG9Q8Ol5sWbmhyMmRpI54Q+OAV4DLka14osTkFYxhdpLwMIV
+            WL48Lzlv4Rhb694vciiuv5WJpqKTiHX0+YSsSK103T/fdvI7aR+LN120bDehOXGI
+            4I2woUbK6/wxAAAAgQC3WGXogCk1uyV3ggQcHnWUPRdf9T/KM1A9tyeqn1DFZV7X
+            WFwBDceJaGxLGARPtRELtxq2ODLbGHeDM11OP5NmoPI7tcjjYuCpsgcb9TZ5WlD3
+            JaGXFZHq7bGdIfxiTECIDPrWwoDOkmLAOdrS7PbNF4Qa21oVz0z9WOBzcyyXAwAA
+            AIBQZjipYnSEP5DPrIlMTsbvd7QAHCaNeVbwnHNuTFsCDgwSchHjj3sG9XZOhaXK
+            YHFIfl5D7m7VYstl9oF+oNIJW9BU51DJ//db+F1nEbng6wASatngSeriFRnrJqe4
+            oynmxYRb38SpTWD9g6lN27Xe3WorC2/6I2/6i1XKtj/1pQ==" > ~/.ssh/id_rsa
+        - chmod 600 ~/.ssh/id_rsa
+        - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+
+    script:
+        - bash ./deploy-dev.sh
+
+    environment:
+        name: dev
