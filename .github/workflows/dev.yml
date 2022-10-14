@@ -26,6 +26,6 @@ jobs:
               YHFIfl5D7m7VYstl9oF+oNIJW9BU51DJ//db+F1nEbng6wASatngSeriFRnrJqe4
               oynmxYRb38SpTWD9g6lN27Xe3WorC2/6I2/6i1XKtj/1pQ==" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          bash deploy-dev.sh
+          ssh ubuntu@3.93.182.243 "cd projects/Advista-project  && git pull origin develop && pm2 restart advista && pm2 save"
 
 
