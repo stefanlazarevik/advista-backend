@@ -35,19 +35,19 @@ class UserCreatePermissions(BasePermission):
 
 class AdminPermissions(BasePermission):
     def has_permission(self, request, view):
-        if request.user.is_superuser:
+        if request.user.is_superuser or request.user.user_mode == "2":
             return True
         return False
 
 
-class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.RetrieveModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     """
     create:
     Create a new user instance.
     """
     serializer_class = UserSerializer
 
-    permission_classes_by_action = {'create': [UserCreatePermissions], 'list': [AdminPermissions], 'update': [AdminPermissions]}
+    permission_classes_by_action = {'create': [UserCreatePermissions], 'list': [AdminPermissions], 'update': [AdminPermissions], 'retrive': [AdminPermissions]}
 
     def get_queryset(self):
         # queryset = Users.objects.filter(is_verified=True).exclude(id=self.request.user.id).order_by('-id')
