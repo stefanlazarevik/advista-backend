@@ -107,3 +107,21 @@ class Reports(models.Model):
 
     class Meta:
         db_table = "reports"
+
+
+class CountryReports(models.Model):
+    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id', db_column='advertiser_id')
+    country_code = models.CharField(max_length=50, null=True)
+    cost_per_conversion = models.CharField(max_length=50, null=True)
+    cpm = models.CharField(max_length=50, null=True)
+    clicks = models.CharField(max_length=50, null=True)
+    ctr = models.CharField(max_length=50, null=True)
+    conversion = models.CharField(max_length=50, null=True)
+    conversion_rate = models.CharField(max_length=50, null=True)
+    impressions = models.CharField(max_length=50, null=True)
+    spend = models.CharField(max_length=50, null=True)
+    cpc = models.CharField(max_length=50, null=True)
+    report_date = models.DateField()
+
+    class Meta:
+        db_table = "country_reports"
