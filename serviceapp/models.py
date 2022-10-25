@@ -72,7 +72,7 @@ class Advertisers(models.Model):
     language = models.CharField(max_length=100, null=True)
     name = models.CharField(max_length=100, null=True)
     status = models.CharField(max_length=100, null=True)
-    balance = models.CharField(max_length=100, null=True)
+    balance = models.FloatField(null=True)
     country = models.CharField(max_length=100, null=True)
     timezone = models.CharField(max_length=100, null=True)
     license_province = models.CharField(max_length=100, null=True)
@@ -89,20 +89,20 @@ class Advertisers(models.Model):
 
 class Reports(models.Model):
     advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id', db_column='advertiser_id')
-    real_time_conversion = models.CharField(max_length=50, null=True)
-    cost_per_conversion = models.CharField(max_length=50, null=True)
-    cpm = models.CharField(max_length=50, null=True)
-    clicks = models.CharField(max_length=50, null=True)
-    ctr = models.CharField(max_length=50, null=True)
-    conversion = models.CharField(max_length=50, null=True)
-    skan_conversion_rate = models.CharField(max_length=50, null=True)
-    skan_conversion = models.CharField(max_length=50, null=True)
-    conversion_rate = models.CharField(max_length=50, null=True)
-    real_time_cost_per_conversion = models.CharField(max_length=50, null=True)
-    skan_cost_per_conversion = models.CharField(max_length=50, null=True)
-    impressions = models.CharField(max_length=50, null=True)
-    spend = models.CharField(max_length=50, null=True)
-    cpc = models.CharField(max_length=50, null=True)
+    real_time_conversion = models.IntegerField(null=True)
+    cost_per_conversion = models.FloatField(null=True)
+    cpm = models.FloatField(null=True)
+    clicks = models.IntegerField(null=True)
+    ctr = models.FloatField(null=True)
+    conversion = models.IntegerField(null=True)
+    skan_conversion_rate = models.FloatField(null=True)
+    skan_conversion = models.IntegerField(null=True)
+    conversion_rate = models.FloatField(null=True)
+    real_time_cost_per_conversion = models.FloatField(null=True)
+    skan_cost_per_conversion = models.FloatField(null=True)
+    impressions = models.IntegerField(null=True)
+    spend = models.FloatField(null=True)
+    cpc = models.FloatField(null=True)
     report_date = models.DateField()
 
     class Meta:
@@ -112,16 +112,26 @@ class Reports(models.Model):
 class CountryReports(models.Model):
     advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id', db_column='advertiser_id')
     country_code = models.CharField(max_length=50, null=True)
-    cost_per_conversion = models.CharField(max_length=50, null=True)
-    cpm = models.CharField(max_length=50, null=True)
-    clicks = models.CharField(max_length=50, null=True)
-    ctr = models.CharField(max_length=50, null=True)
-    conversion = models.CharField(max_length=50, null=True)
-    conversion_rate = models.CharField(max_length=50, null=True)
-    impressions = models.CharField(max_length=50, null=True)
-    spend = models.CharField(max_length=50, null=True)
-    cpc = models.CharField(max_length=50, null=True)
+    country = models.CharField(max_length=100, null=True)
+    cost_per_conversion = models.FloatField(null=True)
+    cpm = models.FloatField(null=True)
+    clicks = models.IntegerField(null=True)
+    ctr = models.FloatField(null=True)
+    conversion = models.IntegerField(null=True)
+    conversion_rate = models.FloatField(null=True)
+    impressions = models.IntegerField(null=True)
+    spend = models.FloatField(null=True)
+    cpc = models.FloatField(null=True)
+    reach = models.IntegerField(null=True)
     report_date = models.DateField()
 
     class Meta:
         db_table = "country_reports"
+
+
+class Partners(models.Model):
+    name = models.CharField(max_length=255, null=True)
+    partner_id = models.CharField(max_length=100, unique=True)
+
+    class Meta:
+        db_table = "partners"
