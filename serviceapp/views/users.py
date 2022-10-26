@@ -5,7 +5,7 @@ from rest_framework.permissions import BasePermission
 from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from serviceapp.models import Users
+from serviceapp.models import Users, TiktokInfo
 from serviceapp.serializers.user_serializer import UserSerializer
 from django.db import transaction
 from rest_framework.decorators import api_view
@@ -132,7 +132,10 @@ class UserInfo(APIView):
 
     def get(self, request):
         serializer = UserSerializer(request.user)
-        return Response(data=serializer.data, status=status.HTTP_200_OK)
+        currency = TiktokInfo.objects.get(id=1).bc_info['currency']
+        data = serializer.data
+        data['currency'] = currency
+        return Response(data=data, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs ):
         try:

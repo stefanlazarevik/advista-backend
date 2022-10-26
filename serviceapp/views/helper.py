@@ -3,7 +3,11 @@ import logging
 from django.conf import settings
 import os, sys, time
 import inspect
+
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import BasePermission
+from collections import OrderedDict
+from rest_framework.response import Response
 
 
 class LogHelper(generic.DetailView):
@@ -59,3 +63,19 @@ class UserPermissions(BasePermission):
         if request.user.is_authenticated:
             return True
         return False
+
+
+class CustomPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'size'
+    max_page_size = 100
+
+    def get_paginated_response(self, data):
+        limit = self.get_page_size(self.request)
+        return Response(OrderedDict([
+            ('count', self.page.paginator.count),
+            ('next', self.get_next_link()),
+            ('previous', self.get_previous_link()),
+            ('total_page', int(self.page.paginator.count / limit) + (0 if (self.page.paginator.count % limit == 0) else 1)),
+            ('results', data)
+        ]))

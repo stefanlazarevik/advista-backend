@@ -1,19 +1,43 @@
 import json
+
+from django.db.models import Sum
 from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from serviceapp.models import TiktokInfo, Advertisers, Reports
 from rest_framework.decorators import api_view
 from serviceapp.views.tiktok_api import tiktok_get
-from serviceapp.views.helper import LogHelper
+from serviceapp.views.helper import LogHelper, UserPermissions
 from datetime import datetime, timedelta, date
 
 
 class ReportView(APIView):
+    permission_classes = (UserPermissions,)
 
-    # def get(self, request):
-    #     serializer = UserSerializer(request.user)
-    #     return Response(data=serializer.data, status=status.HTTP_200_OK)
+    def get(self, request):
+        response = {}
+        try:
+            start_date = request.GET.get('start_date')
+            end_date = request.GET.get('end_date')
+            reports = Reports.objects.filter(report_date__gte=start_date, report_date__lte=end_date).aggregate(Sum('spend'), Sum('clicks'),Sum('conversion'), Sum('impressions'))
+            report = {
+                "conversions": reports['conversion__sum'],
+                "cost": reports['spend__sum'],
+                "clicks": reports['clicks__sum'],
+                "impressions": reports['impressions__sum']
+            }
+            report['conversion_rate'] = round(report['conversions']/(report['clicks']/100), 2)
+            report['ctr'] = round((report['clicks'] / report['impressions']) * 100, 2)
+            report['cpm'] = round((report['cost'] / report['impressions']) * 1000, 2)
+            report['cpc'] = round((report['cost'] / report['clicks']), 2)
+            response["success"] = True
+            response["data"] = report
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            LogHelper.efail(e)
+            response["success"] = False
+            response["message"] = str(e)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
     @api_view(["get"])
     def get_daily_report(request):

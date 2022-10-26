@@ -1,18 +1,40 @@
 import json
+
+from django.db.models import Sum
 from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from serviceapp.models import TiktokInfo, Advertisers
 from rest_framework.decorators import api_view
+
+from serviceapp.serializers.adveriser_serializer import AdvertiserSerializer
 from serviceapp.views.tiktok_api import tiktok_get
-from serviceapp.views.helper import LogHelper
+from serviceapp.views.helper import LogHelper, CustomPagination, UserPermissions
 
 
 class AdvertiserView(APIView):
+    permission_classes = (UserPermissions,)
 
-    # def get(self, request):
-    #     serializer = UserSerializer(request.user)
-    #     return Response(data=serializer.data, status=status.HTTP_200_OK)
+    def get(self, request):
+        response = {}
+        try:
+            start_date = request.GET.get('start_date')
+            end_date = request.GET.get('end_date')
+            advertisers = Advertisers.objects.filter(reports__report_date__gte=start_date,
+                                                     reports__report_date__lte=end_date).annotate(
+                total_cost=Sum('reports__spend'), clicks=Sum('reports__clicks'),
+                conversions=Sum('reports__conversion'), impressions=Sum('reports__impressions')).order_by('id')
+            paginator = CustomPagination()
+            result_page = paginator.paginate_queryset(advertisers, request)
+            serializer = AdvertiserSerializer(result_page, many=True)
+            response["success"] = True
+            response["data"] = serializer.data
+            return paginator.get_paginated_response(data=response)
+        except Exception as e:
+            LogHelper.efail(e)
+            response["success"] = False
+            response["message"] = str(e)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
     @api_view(["get"])
     def get_daily_advertisers(request):
