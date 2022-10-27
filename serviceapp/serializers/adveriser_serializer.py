@@ -24,9 +24,9 @@ class AdvertiserSerializer(serializers.ModelSerializer):
 
     def get_total_cost(self, advertiser):
         try:
-            return round(advertiser.total_cost, 2)
+            return int(advertiser.total_cost)
         except:
-            return 0.00
+            return 0
 
     def get_conversion_rate(self, advertiser):
         try:
