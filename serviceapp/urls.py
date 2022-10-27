@@ -16,8 +16,10 @@ urlpatterns = [
     url(r'^tiktok/get-daily-reports/', ReportView.get_daily_report),
     url(r'^tiktok/get-daily-country-reports/', CountryReportView.get_daily_country_report),
     url(r'^tiktok/get-daily-partners/', PartnerView.get_daily_partners),
-    url(r'^advertisers/', AdvertiserView.as_view()),
-    url(r'^total-report/', ReportView.as_view()),
+    url(r'^advertisers/', AdvertiserView.get_advertisers),
+    url(r'^total-report/', ReportView.get_total_report),
+    url(r'^activity-report/', ReportView.get_activity_report),
+    # url(r'^country-report/', CountryReportView.as_view()),
     # url(r'^email-verification/', UserInfo.email_verification),
     # url(r'^resend-verification-code/', UserInfo.resend_verification_code),
 

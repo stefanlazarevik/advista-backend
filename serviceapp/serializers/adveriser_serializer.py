@@ -7,7 +7,7 @@ from serviceapp.models import Advertisers
 
 class AdvertiserSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
-    total_cost = serializers.FloatField()
+    total_cost = serializers.SerializerMethodField()
     clicks = serializers.IntegerField()
     conversion_rate = serializers.SerializerMethodField()
     conversions = serializers.IntegerField()
@@ -21,6 +21,12 @@ class AdvertiserSerializer(serializers.ModelSerializer):
             return "Active"
         else:
             return "Inactive"
+
+    def get_total_cost(self, advertiser):
+        try:
+            return round(advertiser.total_cost, 2)
+        except:
+            return 0.00
 
     def get_conversion_rate(self, advertiser):
         try:

@@ -5,7 +5,7 @@ from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from serviceapp.models import TiktokInfo, Advertisers
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 
 from serviceapp.serializers.adveriser_serializer import AdvertiserSerializer
 from serviceapp.views.tiktok_api import tiktok_get
@@ -13,9 +13,10 @@ from serviceapp.views.helper import LogHelper, CustomPagination, UserPermissions
 
 
 class AdvertiserView(APIView):
-    permission_classes = (UserPermissions,)
-
-    def get(self, request):
+    # permission_classes = (UserPermissions,)
+    @api_view(["get"])
+    @permission_classes([UserPermissions])
+    def get_advertisers(request):
         response = {}
         try:
             start_date = request.GET.get('start_date')

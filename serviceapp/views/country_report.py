@@ -1,20 +1,37 @@
 import json
+
+from django.db.models import Sum
 from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from serviceapp.models import TiktokInfo, Advertisers, Reports, CountryReports
 from rest_framework.decorators import api_view
+
+from serviceapp.serializers.report_serializer import CountryReportSerializer
 from serviceapp.views.tiktok_api import tiktok_get
-from serviceapp.views.helper import LogHelper
+from serviceapp.views.helper import LogHelper, UserPermissions
 from datetime import datetime, timedelta, date
 import pycountry
 
 
 class CountryReportView(APIView):
+    # permission_classes = (UserPermissions,)
 
     # def get(self, request):
-    #     serializer = UserSerializer(request.user)
-    #     return Response(data=serializer.data, status=status.HTTP_200_OK)
+    #     response = {}
+    #     try:
+    #         start_date = request.GET.get('start_date')
+    #         end_date = request.GET.get('end_date')
+    #         country_reports = CountryReports.objects.filter(report_date__gte=start_date, report_date__lte=end_date).values('country').annotate(total_cost=Sum('spend'), ).exclude(country=None).order_by('-total_cost')[:5]
+    #         serializer = CountryReportSerializer(country_reports, many=True)
+    #         response["success"] = True
+    #         response["data"] = serializer.data
+    #         return Response(response, status=status.HTTP_200_OK)
+    #     except Exception as e:
+    #         LogHelper.efail(e)
+    #         response["success"] = False
+    #         response["message"] = str(e)
+    #         return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
     @api_view(["get"])
     def get_daily_country_report(request):
@@ -85,7 +102,7 @@ class CountryReportView(APIView):
             my_args = "{\"metrics\": %s, \"data_level\": \"%s\", \"end_date\": \"%s\", \"start_date\": \"%s\", \"advertiser_id\": \"%s\", \"report_type\": \"%s\", \"dimensions\": %s}" % (
                 metrics, data_level, end_date, start_date, advertiser_id, report_type, dimensions)
             reports = tiktok_get(my_args, path, access_token)
-            if len(reports['data']['list']) > 0:
+            if 'list' in reports['data'] and len(reports['data']['list']) > 0:
                 response["data"] = reports['data']['list']
             response["success"] = True
         except Exception as e:
