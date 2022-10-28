@@ -38,8 +38,8 @@ class CountryReportView(APIView):
         response = {}
         try:
             report_list = []
-            # today = datetime.now().date()
-            today = request.GET.get('today')
+            today = datetime.now().date()
+            # today = request.GET.get('today')
             if not CountryReports.objects.filter(report_date=today).exists():
                 tiktok_info = TiktokInfo.objects.get(id=1)
                 access_token = tiktok_info.access_token
