@@ -36,7 +36,7 @@ class ReportView(APIView):
             report['cpc'] = round((report['cost'] / report['clicks']), 2)
             # get country report
             country_reports = CountryReports.objects.filter(report_date__gte=start_date,
-                                                            report_date__lte=end_date).values('country').annotate(
+                                                            report_date__lte=end_date).values('country', 'country_code').annotate(
                 total_cost=Sum('spend'), ).exclude(country=None).order_by('-total_cost')[:5]
             serializer = CountryReportSerializer(country_reports, many=True)
             response["data"] = {

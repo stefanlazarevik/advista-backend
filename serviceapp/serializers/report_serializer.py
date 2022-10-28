@@ -17,4 +17,4 @@ class CountryReportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CountryReports
-        fields = ('country', 'total_cost')
+        fields = ('country', 'country_code', 'total_cost')

@@ -7,13 +7,27 @@ from rest_framework.response import Response
 from serviceapp.models import TiktokInfo, Advertisers
 from rest_framework.decorators import api_view, permission_classes
 
-from serviceapp.serializers.adveriser_serializer import AdvertiserSerializer
+from serviceapp.serializers.adveriser_serializer import AdvertiserSerializer, AdvertiserCSVSerializer
 from serviceapp.views.tiktok_api import tiktok_get
 from serviceapp.views.helper import LogHelper, CustomPagination, UserPermissions
 
 
 class AdvertiserView(APIView):
     # permission_classes = (UserPermissions,)
+
+    @api_view(["get"])
+    def hello(request):
+        response = {}
+        try:
+            response["success"] = True
+            response["data"] = "Hello"
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            LogHelper.efail(e)
+            response["success"] = False
+            response["message"] = str(e)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
     @api_view(["get"])
     @permission_classes([UserPermissions])
     def get_advertisers(request):
@@ -36,6 +50,166 @@ class AdvertiserView(APIView):
             response["success"] = False
             response["message"] = str(e)
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+    @api_view(["get"])
+    def generate_csv(request):
+        response = {}
+        try:
+            start_date = "2022-09-29"
+            end_date = "2022-10-28"
+            advertisers = Advertisers.objects.filter(reports__report_date__gte=start_date,
+                                                     reports__report_date__lte=end_date).annotate(
+                total_cost=Sum('reports__spend'), clicks=Sum('reports__clicks'),
+                conversions=Sum('reports__conversion'), impressions=Sum('reports__impressions')).order_by('id')
+            serializer = AdvertiserCSVSerializer(advertisers, many=True)
+            import csv
+            headers = {
+                'name': 'Name',
+                'company': 'Company',
+                'total_cost': 'Cost',
+                'clicks': 'Clicks',
+                'conversion_rate': 'CVR(%)',
+                'conversions': 'Conversions',
+                'cpm': 'CPM',
+                'cpc': 'CPC',
+                'ctr': 'CTR(%)',
+                'cpa': 'CPA',
+                'impressions': 'Impressions'
+            }
+            fieldnames = ['name', 'company', 'total_cost', 'clicks', 'conversion_rate', 'conversions', 'cpm', 'cpc', 'ctr', 'cpa', 'impressions']
+            rows = serializer.data
+            with open('reports.csv', 'w', encoding='UTF8', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                # writer.writeheader()
+                writer.writerow(headers)
+                writer.writerows(rows)
+            response["success"] = True
+            response["data"] = serializer.data
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            LogHelper.efail(e)
+            response["success"] = False
+            response["message"] = str(e)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+    # @api_view(["get"])
+    # def generate_ad_csv(request):
+    #     response = {}
+    #     try:
+    #         tiktok_info = TiktokInfo.objects.get(id=1)
+    #         access_token = tiktok_info.access_token
+    #         advertisers = Advertisers.objects.all()
+    #         for advertiser in advertisers:
+    #             daily_report = AdvertiserView.get_ad_report_by_advertiser(request, advertiser.advertiser_id, access_token)
+    #             if 'data' in daily_report:
+    #                 # daily_report['data']['advertiser_id'] = advertiser
+    #                 # daily_report['data']['report_date'] = daily_report['report_date']
+    #                 report_data = daily_report['data']
+    #                 report_dict = {
+    #                     "advertiser_id": advertiser,
+    #                     "clicks": report_data['clicks'],
+    #                     "conversion": report_data['conversion'],
+    #                     "skan_conversion": report_data['skan_conversion'],
+    #                     "cpc": report_data['cpc'],
+    #                     "cost_per_conversion": report_data['cost_per_conversion'],
+    #                     "conversion_rate": report_data['conversion_rate'],
+    #                     "skan_cost_per_conversion": report_data['skan_cost_per_conversion'],
+    #                     "spend": report_data['spend'],
+    #                     "skan_conversion_rate": report_data['skan_conversion_rate'],
+    #                     "real_time_conversion": report_data['real_time_conversion'],
+    #                     "cpm": report_data['cpm'],
+    #                     "impressions": report_data['impressions'],
+    #                     "real_time_cost_per_conversion": report_data['real_time_cost_per_conversion'],
+    #                     "ctr": report_data['ctr']
+    #                 }
+    #         serializer = AdvertiserCSVSerializer(advertisers, many=True)
+    #         import csv
+    #         headers = {
+    #             'name': 'Name',
+    #             'company': 'Company',
+    #             'total_cost': 'Cost',
+    #             'clicks': 'Clicks',
+    #             'conversion_rate': 'CVR(%)',
+    #             'conversions': 'Conversions',
+    #             'cpm': 'CPM',
+    #             'cpc': 'CPC',
+    #             'ctr': 'CTR(%)',
+    #             'cpa': 'CPA',
+    #             'impressions': 'Impressions'
+    #         }
+    #         fieldnames = ['name', 'company', 'total_cost', 'clicks', 'conversion_rate', 'conversions', 'cpm', 'cpc',
+    #                       'ctr', 'cpa', 'impressions']
+    #         rows = serializer.data
+    #         with open('reports.csv', 'w', encoding='UTF8', newline='') as f:
+    #             writer = csv.DictWriter(f, fieldnames=fieldnames)
+    #             # writer.writeheader()
+    #             writer.writerow(headers)
+    #             writer.writerows(rows)
+    #         response["success"] = True
+    #         response["data"] = serializer.data
+    #         return Response(response, status=status.HTTP_200_OK)
+    #     except Exception as e:
+    #         LogHelper.efail(e)
+    #         response["success"] = False
+    #         response["message"] = str(e)
+    #         return Response(response, status=status.HTTP_400_BAD_REQUEST)
+    #
+    # def get_ad_report_by_advertiser(request, advertiser_id, access_token, today):
+    #     response = {}
+    #     try:
+    #         # Args in JSON format
+    #         path = "/report/integrated/get/"
+    #         metrics_list = ["stat_cost", "cpc", "cpm", "show_cnt", "click_cnt", "ctr", "time_attr_convert_cnt", "time_attr_conversion_cost", "time_attr_conversion_rate", "convert_cnt", "conversion_cost", "conversion_rate", "skan_convert_cnt", "skan_conversion_cost", "skan_conversion_rate"]
+    #         metrics = json.dumps(metrics_list)
+    #         data_level = 'AUCTION_AD'
+    #         start_date = "2022-09-29"
+    #         end_date = "2022-10-28"
+    #         report_type = 'BASIC'
+    #         dimensions_list = ["ad_id"]
+    #         dimensions = json.dumps(dimensions_list)
+    #
+    #         # Args in JSON format
+    #         my_args = "{\"metrics\": %s, \"data_level\": \"%s\", \"end_date\": \"%s\", \"start_date\": \"%s\", \"advertiser_id\": \"%s\", \"report_type\": \"%s\", \"dimensions\": %s}" % (
+    #             metrics, data_level, end_date, start_date, advertiser_id, report_type, dimensions)
+    #         reports = tiktok_get(my_args, path, access_token)
+    #         for ad in reports['data']['list']:
+    #             ad_id = ad["dimensions"]["ad_id"]
+    #
+    #         response["data"] = reports['data']['list']
+    #         response["success"] = True
+    #     except Exception as e:
+    #         LogHelper.efail(e)
+    #         response["success"] = False
+    #         response["message"] = str(e)
+    #     return response
+    #
+    # def get_ad_data(request, advertiser_id, access_token, ad_id):
+    #     response = {}
+    #     try:
+    #         # Args in JSON format
+    #         path = "/report/integrated/get/"
+    #         metrics_list = ["stat_cost", "cpc", "cpm", "show_cnt", "click_cnt", "ctr", "time_attr_convert_cnt", "time_attr_conversion_cost", "time_attr_conversion_rate", "convert_cnt", "conversion_cost", "conversion_rate", "skan_convert_cnt", "skan_conversion_cost", "skan_conversion_rate"]
+    #         metrics = json.dumps(metrics_list)
+    #         data_level = 'AUCTION_AD'
+    #         start_date = "2022-09-29"
+    #         end_date = "2022-10-28"
+    #         report_type = 'BASIC'
+    #         dimensions_list = ["ad_id"]
+    #         dimensions = json.dumps(dimensions_list)
+    #
+    #         # Args in JSON format
+    #         my_args = "{\"metrics\": %s, \"data_level\": \"%s\", \"end_date\": \"%s\", \"start_date\": \"%s\", \"advertiser_id\": \"%s\", \"report_type\": \"%s\", \"dimensions\": %s}" % (
+    #             metrics, data_level, end_date, start_date, advertiser_id, report_type, dimensions)
+    #         reports = tiktok_get(my_args, path, access_token)
+    #         for ad in reports['data']['list']:
+    #             add_id = ad["dimensions"]["ad_id"]
+    #         response["data"] = reports['data']['list']
+    #         response["success"] = True
+    #     except Exception as e:
+    #         LogHelper.efail(e)
+    #         response["success"] = False
+    #         response["message"] = str(e)
+    #     return response
 
     @api_view(["get"])
     def get_daily_advertisers(request):
