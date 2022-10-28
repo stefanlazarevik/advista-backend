@@ -14,6 +14,7 @@ class AdvertiserSerializer(serializers.ModelSerializer):
     cpm = serializers.SerializerMethodField()
     cpc = serializers.SerializerMethodField()
     ctr = serializers.SerializerMethodField()
+    cpa = serializers.SerializerMethodField()
     impressions = serializers.IntegerField()
 
     def get_status(self, advertiser):
@@ -52,6 +53,12 @@ class AdvertiserSerializer(serializers.ModelSerializer):
         except:
             return 0.00
 
+    def get_cpa(self, advertiser):
+        try:
+            return round((advertiser.total_cost / advertiser.conversions), 2)
+        except:
+            return 0.00
+
     class Meta:
         model = Advertisers
-        fields = ('id', 'advertiser_id', 'name', 'timezone', 'display_timezone', 'status', 'total_cost', 'clicks', 'conversion_rate', 'conversions', 'cpm', 'cpc', 'ctr', 'impressions', 'company')
+        fields = ('id', 'advertiser_id', 'name', 'timezone', 'display_timezone', 'status', 'total_cost', 'clicks', 'conversion_rate', 'conversions', 'cpm', 'cpc', 'ctr', 'cpa', 'impressions', 'company')

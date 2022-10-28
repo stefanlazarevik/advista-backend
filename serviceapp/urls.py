@@ -19,6 +19,7 @@ urlpatterns = [
     url(r'^advertisers/', AdvertiserView.get_advertisers),
     url(r'^total-report/', ReportView.get_total_report),
     url(r'^activity-report/', ReportView.get_activity_report),
+    url(r'^partners/', PartnerView.get_partners),
     # url(r'^country-report/', CountryReportView.as_view()),
     # url(r'^email-verification/', UserInfo.email_verification),
     # url(r'^resend-verification-code/', UserInfo.resend_verification_code),
