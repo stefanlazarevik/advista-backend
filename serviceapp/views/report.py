@@ -24,16 +24,28 @@ class ReportView(APIView):
             start_date = request.GET.get('start_date')
             end_date = request.GET.get('end_date')
             reports = Reports.objects.filter(report_date__gte=start_date, report_date__lte=end_date).aggregate(Sum('spend'), Sum('clicks'),Sum('conversion'), Sum('impressions'))
+            total_conversions = reports['conversion__sum'] if reports['conversion__sum'] else 0
+            total_cost = reports['spend__sum'] if reports['spend__sum'] else 0.0
+            total_clicks = reports['clicks__sum'] if reports['clicks__sum'] else 0
+            total_impressions = reports['impressions__sum'] if reports['impressions__sum'] else 0
             report = {
-                "conversions": reports['conversion__sum'],
-                "cost": round(reports['spend__sum'], 2),
-                "clicks": reports['clicks__sum'],
-                "impressions": reports['impressions__sum']
+                "conversions": total_conversions,
+                "cost": round(total_cost, 2),
+                "clicks": total_clicks,
+                "impressions": total_impressions
             }
-            report['conversion_rate'] = round(report['conversions']/(report['clicks']/100), 2)
-            report['ctr'] = round((report['clicks'] / report['impressions']) * 100, 2)
-            report['cpm'] = round((report['cost'] / report['impressions']) * 1000, 2)
-            report['cpc'] = round((report['cost'] / report['clicks']), 2)
+            if report['clicks'] != 0:
+                report['conversion_rate'] = round(report['conversions']/(report['clicks']/100), 2)
+                report['cpc'] = round((report['cost'] / report['clicks']), 2)
+            else:
+                report['conversion_rate'] = 0
+                report['cpc'] = 0
+            if report['impressions'] != 0:
+                report['ctr'] = round((report['clicks'] / report['impressions']) * 100, 2)
+                report['cpm'] = round((report['cost'] / report['impressions']) * 1000, 2)
+            else:
+                report['ctr'] = 0
+                report['cpm'] = 0
             # get country report
             country_reports = CountryReports.objects.filter(report_date__gte=start_date,
                                                             report_date__lte=end_date).values('country', 'country_code').annotate(
