@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from serviceapp.models import TiktokInfo, Advertisers, Reports, CountryReports
 from rest_framework.decorators import api_view, permission_classes
 
-from serviceapp.serializers.report_serializer import CountryReportSerializer
+from serviceapp.serializers.report_serializer import CountryReportSerializer, DailyReportSerializer
 from serviceapp.views.tiktok_api import tiktok_get
 from serviceapp.views.helper import LogHelper, UserPermissions
 from datetime import datetime, timedelta, date
@@ -26,7 +26,7 @@ class ReportView(APIView):
             reports = Reports.objects.filter(report_date__gte=start_date, report_date__lte=end_date).aggregate(Sum('spend'), Sum('clicks'),Sum('conversion'), Sum('impressions'))
             report = {
                 "conversions": reports['conversion__sum'],
-                "cost": reports['spend__sum'],
+                "cost": round(reports['spend__sum'], 2),
                 "clicks": reports['clicks__sum'],
                 "impressions": reports['impressions__sum']
             }
@@ -39,9 +39,15 @@ class ReportView(APIView):
                                                             report_date__lte=end_date).values('country', 'country_code').annotate(
                 total_cost=Sum('spend'), ).exclude(country=None).order_by('-total_cost')[:5]
             serializer = CountryReportSerializer(country_reports, many=True)
+            # get Activity report
+            daily_reports = Reports.objects.filter(report_date__lte=end_date, report_date__gte=start_date, spend__gt=0).values(
+                'report_date').annotate(Count('advertiser_id', distinct=True), Sum('spend'), Sum('clicks'),
+                                        Sum('conversion'), Sum('impressions')).order_by('-report_date')
+            report_serializer = DailyReportSerializer(daily_reports, many=True)
             response["data"] = {
                 "total_repots": report,
                 "country_repots": serializer.data,
+                "activity_reports": report_serializer.data
             }
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
@@ -51,62 +57,62 @@ class ReportView(APIView):
             response["message"] = str(e)
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
-    @api_view(["get"])
-    @permission_classes([UserPermissions])
-    def get_activity_report(request):
-        response = {}
-        try:
-            report_type = request.GET.get('type')
-            today = datetime.now().date()
-            week_1 = today - timedelta(days=6)
-            week_2_end = week_1 - timedelta(days=1)
-            week_2_start = week_2_end - timedelta(days=6)
-            reports = []
-            if report_type == 'weekly':
-                week_1_reports = Reports.objects.filter(report_date__lte=today, report_date__gte=week_1, spend__gt=0).aggregate(Count('advertiser_id', distinct=True),Sum('spend'), Sum('clicks'),Sum('conversion'), Sum('impressions'))
-                week_2_reports = Reports.objects.filter(report_date__lte=week_2_end, report_date__gte=week_2_start, spend__gt=0).aggregate(Count('advertiser_id', distinct=True),Sum('spend'), Sum('clicks'),Sum('conversion'), Sum('impressions'))
-                week_1_report = {
-                    "conversions": week_1_reports['conversion__sum'],
-                    "cost": round(week_1_reports['spend__sum'], 2),
-                    "clicks": week_1_reports['clicks__sum'],
-                    "impressions": week_1_reports['impressions__sum'],
-                    "products": week_1_reports['advertiser_id__count'],
-                    "start_date": week_1,
-                    "end_date": today
-                }
-                reports.append(week_1_report)
-                week_2_report = {
-                    "conversions": week_2_reports['conversion__sum'],
-                    "cost": round(week_2_reports['spend__sum'], 2),
-                    "clicks": week_2_reports['clicks__sum'],
-                    "impressions": week_2_reports['impressions__sum'],
-                    "products": week_2_reports['advertiser_id__count'],
-                    "start_date": week_2_start,
-                    "end_date": week_2_end
-                }
-                reports.append(week_2_report)
-            else:
-                daily_reports = Reports.objects.filter(report_date__lte=today, report_date__gte=week_1, spend__gt=0).values('report_date').annotate(Count('advertiser_id', distinct=True), Sum('spend'), Sum('clicks'),
-                                                                               Sum('conversion'), Sum('impressions')).order_by('-report_date')
-                for data in daily_reports:
-                    daily_report = {
-                        "conversions": data['conversion__sum'],
-                        "cost": round(data['spend__sum'], 2),
-                        "clicks": data['clicks__sum'],
-                        "impressions": data['impressions__sum'],
-                        "products": data['advertiser_id__count'],
-                        "start_date": data['report_date']
-                    }
-                    reports.append(daily_report)
-            response["success"] = True
-            response["data"] = reports
-            response["success"] = True
-            return Response(response, status=status.HTTP_200_OK)
-        except Exception as e:
-            LogHelper.efail(e)
-            response["success"] = False
-            response["message"] = str(e)
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+    # @api_view(["get"])
+    # @permission_classes([UserPermissions])
+    # def get_activity_report(request):
+    #     response = {}
+    #     try:
+    #         report_type = request.GET.get('type')
+    #         today = datetime.now().date()
+    #         week_1 = today - timedelta(days=6)
+    #         week_2_end = week_1 - timedelta(days=1)
+    #         week_2_start = week_2_end - timedelta(days=6)
+    #         reports = []
+    #         if report_type == 'weekly':
+    #             week_1_reports = Reports.objects.filter(report_date__lte=today, report_date__gte=week_1, spend__gt=0).aggregate(Count('advertiser_id', distinct=True),Sum('spend'), Sum('clicks'),Sum('conversion'), Sum('impressions'))
+    #             week_2_reports = Reports.objects.filter(report_date__lte=week_2_end, report_date__gte=week_2_start, spend__gt=0).aggregate(Count('advertiser_id', distinct=True),Sum('spend'), Sum('clicks'),Sum('conversion'), Sum('impressions'))
+    #             week_1_report = {
+    #                 "conversions": week_1_reports['conversion__sum'],
+    #                 "cost": round(week_1_reports['spend__sum'], 2),
+    #                 "clicks": week_1_reports['clicks__sum'],
+    #                 "impressions": week_1_reports['impressions__sum'],
+    #                 "products": week_1_reports['advertiser_id__count'],
+    #                 "start_date": week_1,
+    #                 "end_date": today
+    #             }
+    #             reports.append(week_1_report)
+    #             week_2_report = {
+    #                 "conversions": week_2_reports['conversion__sum'],
+    #                 "cost": round(week_2_reports['spend__sum'], 2),
+    #                 "clicks": week_2_reports['clicks__sum'],
+    #                 "impressions": week_2_reports['impressions__sum'],
+    #                 "products": week_2_reports['advertiser_id__count'],
+    #                 "start_date": week_2_start,
+    #                 "end_date": week_2_end
+    #             }
+    #             reports.append(week_2_report)
+    #         else:
+    #             daily_reports = Reports.objects.filter(report_date__lte=today, report_date__gte=week_1, spend__gt=0).values('report_date').annotate(Count('advertiser_id', distinct=True), Sum('spend'), Sum('clicks'),
+    #                                                                            Sum('conversion'), Sum('impressions')).order_by('-report_date')
+    #             for data in daily_reports:
+    #                 daily_report = {
+    #                     "conversions": data['conversion__sum'],
+    #                     "cost": round(data['spend__sum'], 2),
+    #                     "clicks": data['clicks__sum'],
+    #                     "impressions": data['impressions__sum'],
+    #                     "products": data['advertiser_id__count'],
+    #                     "start_date": data['report_date']
+    #                 }
+    #                 reports.append(daily_report)
+    #         response["success"] = True
+    #         response["data"] = reports
+    #         response["success"] = True
+    #         return Response(response, status=status.HTTP_200_OK)
+    #     except Exception as e:
+    #         LogHelper.efail(e)
+    #         response["success"] = False
+    #         response["message"] = str(e)
+    #         return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
     @api_view(["get"])
     def get_daily_report(request):

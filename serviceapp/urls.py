@@ -18,7 +18,7 @@ urlpatterns = [
     url(r'^tiktok/get-daily-partners/', PartnerView.get_daily_partners),
     url(r'^products/', AdvertiserView.get_advertisers),
     url(r'^total-report/', ReportView.get_total_report),
-    url(r'^activity-report/', ReportView.get_activity_report),
+    # url(r'^activity-report/', ReportView.get_activity_report),
     url(r'^partners/', PartnerView.get_partners),
     url(r'^generate-csv/', AdvertiserView.generate_csv),
     url(r'^hello/', AdvertiserView.hello),

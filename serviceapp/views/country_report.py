@@ -57,23 +57,23 @@ class CountryReportView(APIView):
                                 data['country_code'] = country_code
                                 country = pycountry.countries.get(alpha_2=country_code)
                                 data['country'] = country.name
-                            report_dict = {
-                                "advertiser_id": advertiser,
-                                "report_date": today,
-                                "cost_per_conversion": data['cost_per_conversion'],
-                                "ctr": data['ctr'],
-                                "cpc": data['cpc'],
-                                "spend": data['spend'],
-                                "impressions": data['impressions'],
-                                "clicks": data['clicks'],
-                                "cpm": data['cpm'],
-                                "conversion": data['conversion'],
-                                "conversion_rate": data['conversion_rate'],
-                                "reach": data['reach'],
-                                "country": data['country'],
-                                "country_code": data['country_code']
-                            }
-                            report_list.append(CountryReports(**report_dict))
+                                report_dict = {
+                                    "advertiser_id": advertiser,
+                                    "report_date": today,
+                                    "cost_per_conversion": data['cost_per_conversion'],
+                                    "ctr": data['ctr'],
+                                    "cpc": data['cpc'],
+                                    "spend": data['spend'],
+                                    "impressions": data['impressions'],
+                                    "clicks": data['clicks'],
+                                    "cpm": data['cpm'],
+                                    "conversion": data['conversion'],
+                                    "conversion_rate": data['conversion_rate'],
+                                    "reach": data['reach'],
+                                    "country": data['country'],
+                                    "country_code": data['country_code']
+                                }
+                                report_list.append(CountryReports(**report_dict))
                 if len(report_list) > 0:
                     CountryReports.objects.bulk_create(report_list)
             response["success"] = True
