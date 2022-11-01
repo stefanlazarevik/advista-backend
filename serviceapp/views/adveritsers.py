@@ -1,6 +1,6 @@
 import json
 
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -35,8 +35,13 @@ class AdvertiserView(APIView):
         try:
             start_date = request.GET.get('start_date')
             end_date = request.GET.get('end_date')
-            advertisers = Advertisers.objects.filter(reports__report_date__gte=start_date,
-                                                     reports__report_date__lte=end_date).annotate(
+            query_filter = Q()
+            query_filter &= Q(reports__report_date__gte=start_date)
+            query_filter &= Q(reports__report_date__lte=end_date)
+            if 'query' in request.GET:
+                name = request.GET.get('query')
+                query_filter &= Q(name__icontains=name)
+            advertisers = Advertisers.objects.filter(query_filter).annotate(
                 total_cost=Sum('reports__spend'), clicks=Sum('reports__clicks'),
                 conversions=Sum('reports__conversion'), impressions=Sum('reports__impressions')).order_by('id')
             paginator = CustomPagination()
