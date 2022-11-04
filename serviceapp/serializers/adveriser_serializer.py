@@ -18,10 +18,10 @@ class AdvertiserSerializer(serializers.ModelSerializer):
     impressions = serializers.IntegerField()
 
     def get_status(self, advertiser):
-        if advertiser.status == 'STATUS_DISABLE':
-            return False
-        else:
+        if advertiser.status == 'STATUS_ENABLE':
             return True
+        else:
+            return False
 
     def get_total_cost(self, advertiser):
         try:
