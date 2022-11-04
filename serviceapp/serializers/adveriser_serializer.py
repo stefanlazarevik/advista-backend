@@ -19,9 +19,9 @@ class AdvertiserSerializer(serializers.ModelSerializer):
 
     def get_status(self, advertiser):
         if advertiser.status == 'STATUS_ENABLE':
-            return "Active"
+            return True
         else:
-            return "Inactive"
+            return False
 
     def get_total_cost(self, advertiser):
         try:
