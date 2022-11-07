@@ -79,3 +79,48 @@ class CustomPagination(PageNumberPagination):
             ('total_page', int(self.page.paginator.count / limit) + (0 if (self.page.paginator.count % limit == 0) else 1)),
             ('results', data)
         ]))
+
+
+class AdvertiserCalculateView(generic.DetailView):
+
+    def get_status(request, advertiser):
+        if advertiser.status == 'STATUS_ENABLE':
+            return True
+        else:
+            return False
+
+    def get_total_cost(request, advertiser):
+        try:
+            return int(advertiser.total_cost)
+        except:
+            return 0
+
+    def get_conversion_rate(request, advertiser):
+        try:
+            return round(advertiser.conversions/(advertiser.clicks/100), 2)
+        except:
+            return 0.00
+
+    def get_ctr(request, advertiser):
+        try:
+            return round((advertiser.clicks / advertiser.impressions) * 100, 2)
+        except:
+            return 0.00
+
+    def get_cpm(request, advertiser):
+        try:
+            return round((advertiser.total_cost / advertiser.impressions) * 1000, 2)
+        except:
+            return 0.00
+
+    def get_cpc(request, advertiser):
+        try:
+            return round((advertiser.total_cost / advertiser.clicks), 2)
+        except:
+            return 0.00
+
+    def get_cpa(request, advertiser):
+        try:
+            return round((advertiser.total_cost / advertiser.conversions), 2)
+        except:
+            return 0.00

@@ -1,6 +1,6 @@
 import json
 
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, F, Case, When, Value, FloatField, ExpressionWrapper
 from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -9,7 +9,8 @@ from rest_framework.decorators import api_view, permission_classes
 
 from serviceapp.serializers.adveriser_serializer import AdvertiserSerializer, AdvertiserCSVSerializer
 from serviceapp.views.tiktok_api import tiktok_get
-from serviceapp.views.helper import LogHelper, CustomPagination, UserPermissions
+from serviceapp.views.helper import LogHelper, CustomPagination, UserPermissions, AdvertiserCalculateView
+from django.db.models.functions.comparison import NullIf
 
 
 class AdvertiserView(APIView):
@@ -35,20 +36,45 @@ class AdvertiserView(APIView):
         try:
             start_date = request.GET.get('start_date')
             end_date = request.GET.get('end_date')
+            advertiser_list = []
             query_filter = Q()
             query_filter &= Q(reports__report_date__gte=start_date)
             query_filter &= Q(reports__report_date__lte=end_date)
+            order_by = 'id'
+            sort_by = True
+            if 'sort_field' in request.GET:
+                sort_field = request.GET.get('sort_field')
+                order_by = sort_field
+            if 'sort_by' in request.GET:
+                sort_by = request.GET.get('sort_by')
+                if sort_by == 'asc':
+                    sort_by = False
+                    if order_by == "status":
+                        sort_by = True
+                else:
+                    sort_by = True
+                    if order_by == "status":
+                        sort_by = False
             if 'query' in request.GET:
                 name = request.GET.get('query')
                 query_filter &= Q(name__icontains=name)
             advertisers = Advertisers.objects.filter(query_filter).annotate(
                 total_cost=Sum('reports__spend'), clicks=Sum('reports__clicks'),
-                conversions=Sum('reports__conversion'), impressions=Sum('reports__impressions')).order_by('id')
+                conversions=Sum('reports__conversion'), impressions=Sum('reports__impressions')).order_by("id")
+            for advertiser in advertisers:
+                advertiser.status = AdvertiserCalculateView.get_status(request, advertiser)
+                advertiser.conversion_rate = AdvertiserCalculateView.get_conversion_rate(request, advertiser)
+                advertiser.total_cost = AdvertiserCalculateView.get_total_cost(request, advertiser)
+                advertiser.ctr = AdvertiserCalculateView.get_ctr(request, advertiser)
+                advertiser.cpm = AdvertiserCalculateView.get_cpm(request, advertiser)
+                advertiser.cpc = AdvertiserCalculateView.get_cpc(request, advertiser)
+                advertiser.cpa = AdvertiserCalculateView.get_cpa(request, advertiser)
+                advertiser_list.append(AdvertiserSerializer(advertiser).data)
+            new_sorted_list = sorted(advertiser_list, key=lambda d: d[order_by], reverse=sort_by)
             paginator = CustomPagination()
-            result_page = paginator.paginate_queryset(advertisers, request)
-            serializer = AdvertiserSerializer(result_page, many=True)
+            result_page = paginator.paginate_queryset(new_sorted_list, request)
             response["success"] = True
-            response["data"] = serializer.data
+            response["data"] = result_page
             return paginator.get_paginated_response(data=response)
         except Exception as e:
             LogHelper.efail(e)
