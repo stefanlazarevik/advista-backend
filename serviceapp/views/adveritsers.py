@@ -41,7 +41,7 @@ class AdvertiserView(APIView):
             query_filter &= Q(reports__report_date__gte=start_date)
             query_filter &= Q(reports__report_date__lte=end_date)
             order_by = 'id'
-            sort_by = True
+            sort_by = False
             if 'sort_field' in request.GET:
                 sort_field = request.GET.get('sort_field')
                 order_by = sort_field
