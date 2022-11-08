@@ -85,9 +85,9 @@ class AdvertiserCalculateView(generic.DetailView):
 
     def get_status(request, advertiser):
         if advertiser.status == 'STATUS_ENABLE':
-            return True
+            return "active"
         else:
-            return False
+            return "deactive"
 
     def get_total_cost(request, advertiser):
         try:
