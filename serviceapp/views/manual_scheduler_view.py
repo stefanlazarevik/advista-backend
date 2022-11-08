@@ -15,16 +15,16 @@ from serviceapp.views.helper import LogHelper, UserPermissions
 from datetime import datetime, timedelta, date
 
 
-class SchedulerView(APIView):
+class ManualSchedulerView(APIView):
 
     @api_view(["get"])
     def get_scheduler_data(request):
         response = {}
         try:
-            advertisers = SchedulerView.get_daily_advertisers(request)
-            reports = SchedulerView.get_daily_report(request)
-            country_reports = SchedulerView.get_daily_country_report(request)
-            partners = SchedulerView.get_daily_partners(request)
+            advertisers = ManualSchedulerView.get_daily_advertisers(request)
+            reports = ManualSchedulerView.get_daily_report(request)
+            country_reports = ManualSchedulerView.get_daily_country_report(request)
+            partners = ManualSchedulerView.get_daily_partners(request)
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
@@ -55,8 +55,8 @@ class SchedulerView(APIView):
             # print(new_advertisers)
             print(len(new_advertisers))
             if len(new_advertisers) > 0 :
-                save_advertisers = SchedulerView.save_new_advertisers(request, new_advertisers, access_token)
-            update_advertisers = SchedulerView.update_existing_advertisers(request, list(existing_advertisers), access_token)
+                save_advertisers = ManualSchedulerView.save_new_advertisers(request, new_advertisers, access_token)
+            update_advertisers = ManualSchedulerView.update_existing_advertisers(request, list(existing_advertisers), access_token)
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
@@ -193,9 +193,9 @@ class SchedulerView(APIView):
                 # x = range(3)
                 # for n in x:
                     # timezone_date = prev_day + timedelta(days=n)
-                # timezone_date = request.GET.get('today')
-                timezone_date = SchedulerView.convert_datetime_timezone(advertiser.display_timezone)
-                daily_report = SchedulerView.get_report_by_advertiser(request, advertiser.advertiser_id, access_token, timezone_date)
+                timezone_date = request.GET.get('today')
+                # timezone_date = SchedulerView.convert_datetime_timezone(advertiser.display_timezone)
+                daily_report = ManualSchedulerView.get_report_by_advertiser(request, advertiser.advertiser_id, access_token, timezone_date)
                 if 'data' in daily_report:
                     # daily_report['data']['advertiser_id'] = advertiser
                     # daily_report['data']['report_date'] = daily_report['report_date']
@@ -274,9 +274,9 @@ class SchedulerView(APIView):
                 # x = range(3)
                 # for n in x:
                 # timezone_date = prev_day + timedelta(days=n)
-                # timezone_date = request.GET.get('today')
-                timezone_date = SchedulerView.convert_datetime_timezone(advertiser.display_timezone)
-                daily_report = SchedulerView.get_country_report_by_advertiser(request, advertiser.advertiser_id, access_token, timezone_date)
+                timezone_date = request.GET.get('today')
+                # timezone_date = SchedulerView.convert_datetime_timezone(advertiser.display_timezone)
+                daily_report = ManualSchedulerView.get_country_report_by_advertiser(request, advertiser.advertiser_id, access_token, timezone_date)
                 if 'data' in daily_report:
                     report_data = daily_report['data']
                     for report in report_data:

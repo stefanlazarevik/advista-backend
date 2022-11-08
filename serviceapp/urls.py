@@ -1,6 +1,7 @@
 from rest_framework.routers import SimpleRouter
 from django.conf.urls import url, include
 
+from .views.manual_scheduler_view import ManualSchedulerView
 from .views.scheduler_view import SchedulerView
 from .views.users import UserViewSet, UserInfo
 from .views.adveritsers import AdvertiserView
@@ -19,6 +20,7 @@ urlpatterns = [
     # url(r'^tiktok/get-daily-country-reports/', CountryReportView.get_daily_country_report),
     # url(r'^tiktok/get-daily-partners/', PartnerView.get_daily_partners),
     url(r'^tiktok/get-tiktok-data/', SchedulerView.get_scheduler_data),
+    url(r'^manual-tiktok/get-tiktok-data/', ManualSchedulerView.get_scheduler_data),
     url(r'^products/', AdvertiserView.get_advertisers),
     url(r'^total-report/', ReportView.get_total_report),
     # url(r'^activity-report/', ReportView.get_activity_report),
