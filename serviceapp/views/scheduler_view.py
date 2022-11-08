@@ -1,5 +1,5 @@
 import json
-
+from pytz import timezone
 import pycountry
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, Count, Q
@@ -181,21 +181,27 @@ class SchedulerView(APIView):
         response = {}
         try:
             report_list = []
-            today = datetime.now().date()
+            # today = datetime.now().date()
             # today = request.GET.get('today')
+            # today = datetime.strptime(today, "%Y-%m-%d").date()
+            # prev_day = today + timedelta(days=-1)
             # if not Reports.objects.filter(report_date=today).exists():
             tiktok_info = TiktokInfo.objects.get(id=1)
             access_token = tiktok_info.access_token
             advertisers = Advertisers.objects.all()
             for advertiser in advertisers:
-                daily_report = SchedulerView.get_report_by_advertiser(request, advertiser.advertiser_id, access_token, today)
+                # x = range(3)
+                # for n in x:
+                    # timezone_date = prev_day + timedelta(days=n)
+                timezone_date = SchedulerView.convert_datetime_timezone(advertiser.display_timezone)
+                daily_report = SchedulerView.get_report_by_advertiser(request, advertiser.advertiser_id, access_token, timezone_date)
                 if 'data' in daily_report:
                     # daily_report['data']['advertiser_id'] = advertiser
                     # daily_report['data']['report_date'] = daily_report['report_date']
                     report_data = daily_report['data']
                     report_dict = {
                         "advertiser_id": advertiser,
-                        "report_date": today,
+                        "report_date": timezone_date,
                         "clicks": report_data['clicks'],
                         "conversion": report_data['conversion'],
                         "skan_conversion": report_data['skan_conversion'],
@@ -212,7 +218,7 @@ class SchedulerView(APIView):
                         "ctr": report_data['ctr']
                     }
                     report, created = Reports.objects.update_or_create(
-                        advertiser_id=advertiser, report_date=today, defaults=report_dict
+                        advertiser_id=advertiser, report_date=timezone_date, defaults=report_dict
                     )
                     # report_list.append(Reports(**report_dict))
             # if len(report_list) > 0:
@@ -255,14 +261,20 @@ class SchedulerView(APIView):
         response = {}
         try:
             report_list = []
-            today = datetime.now().date()
+            # today = datetime.now().date()
             # today = request.GET.get('today')
+            # today = datetime.strptime(today, "%Y-%m-%d").date()
+            # prev_day = today + timedelta(days=-1)
             # if not CountryReports.objects.filter(report_date=today).exists():
             tiktok_info = TiktokInfo.objects.get(id=1)
             access_token = tiktok_info.access_token
             advertisers = Advertisers.objects.all()
             for advertiser in advertisers:
-                daily_report = SchedulerView.get_country_report_by_advertiser(request, advertiser.advertiser_id, access_token, today)
+                # x = range(3)
+                # for n in x:
+                # timezone_date = prev_day + timedelta(days=n)
+                timezone_date = SchedulerView.convert_datetime_timezone(advertiser.display_timezone)
+                daily_report = SchedulerView.get_country_report_by_advertiser(request, advertiser.advertiser_id, access_token, timezone_date)
                 if 'data' in daily_report:
                     report_data = daily_report['data']
                     for report in report_data:
@@ -276,7 +288,7 @@ class SchedulerView(APIView):
                             data['country'] = country.name
                             report_dict = {
                                 "advertiser_id": advertiser,
-                                "report_date": today,
+                                "report_date": timezone_date,
                                 "cost_per_conversion": data['cost_per_conversion'],
                                 "ctr": data['ctr'],
                                 "cpc": data['cpc'],
@@ -291,7 +303,7 @@ class SchedulerView(APIView):
                                 "country_code": data['country_code']
                             }
                             report, created = CountryReports.objects.update_or_create(
-                                advertiser_id=advertiser, report_date=today, country_code=country_code, defaults=report_dict
+                                advertiser_id=advertiser, report_date=timezone_date, country_code=country_code, defaults=report_dict
                             )
                             # report_list.append(CountryReports(**report_dict))
             # if len(report_list) > 0:
@@ -360,6 +372,12 @@ class SchedulerView(APIView):
             response["success"] = False
             response["message"] = str(e)
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+    def convert_datetime_timezone(tz):
+        now_utc = datetime.now(timezone("UTC"))
+        now_timezone = now_utc.astimezone(timezone(tz))
+        dt = now_timezone.strftime("%Y-%m-%d")
+        return dt
 
 
 
