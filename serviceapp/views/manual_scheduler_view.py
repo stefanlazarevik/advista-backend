@@ -21,10 +21,15 @@ class ManualSchedulerView(APIView):
     def get_scheduler_data(request):
         response = {}
         try:
+            print("scheduler start-----------")
             advertisers = ManualSchedulerView.get_daily_advertisers(request)
+            print("advertisers end-----------")
             reports = ManualSchedulerView.get_daily_report(request)
+            print("reports end-----------")
             country_reports = ManualSchedulerView.get_daily_country_report(request)
+            print("country_reports end-----------")
             partners = ManualSchedulerView.get_daily_partners(request)
+            print("scheduler end-----------")
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
