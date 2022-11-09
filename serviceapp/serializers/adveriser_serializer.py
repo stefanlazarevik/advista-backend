@@ -18,7 +18,7 @@ class AdvertiserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Advertisers
-        fields = ('id', 'advertiser_id', 'name', 'timezone', 'display_timezone', 'status', 'total_cost', 'clicks', 'conversion_rate', 'conversions', 'cpm', 'cpc', 'ctr', 'cpa', 'impressions', 'company')
+        fields = ('id', 'advertiser_id', 'name', 'timezone', 'display_timezone', 'status', 'total_cost', 'clicks', 'conversion_rate', 'conversions', 'cpm', 'cpc', 'ctr', 'cpa', 'impressions', 'company', 'status_code')
 
 
 class AdvertiserCSVSerializer(serializers.ModelSerializer):

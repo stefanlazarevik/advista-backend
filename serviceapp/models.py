@@ -52,6 +52,15 @@ class TiktokInfo(models.Model):
 
 
 class Advertisers(models.Model):
+    STATUS_CHOICE = (
+        ('active', 'Active'),
+        ('disabled', 'Disabled'),
+        ('review', 'Review'),
+        ('verification', 'Verification'),
+        ('failed', 'Failed'),
+        ('limit', 'Limit')
+    )
+
     advertiser_id = models.CharField(max_length=100, unique=True)
     role = models.CharField(max_length=100, null=True)
     display_timezone = models.CharField(max_length=100, null=True)
@@ -72,6 +81,7 @@ class Advertisers(models.Model):
     language = models.CharField(max_length=100, null=True)
     name = models.CharField(max_length=100, null=True)
     status = models.CharField(max_length=100, null=True)
+    status_code = models.CharField(choices=STATUS_CHOICE, max_length=32, default='active')
     balance = models.FloatField(null=True)
     country = models.CharField(max_length=100, null=True)
     timezone = models.CharField(max_length=100, null=True)

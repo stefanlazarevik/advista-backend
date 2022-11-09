@@ -84,10 +84,11 @@ class CustomPagination(PageNumberPagination):
 class AdvertiserCalculateView(generic.DetailView):
 
     def get_status(request, advertiser):
-        if advertiser.status == 'STATUS_ENABLE':
-            return "active"
-        else:
-            return "deactive"
+        return advertiser.status_code
+        # if advertiser.status == 'STATUS_ENABLE':
+        #     return "active"
+        # else:
+        #     return "deactive"
 
     def get_total_cost(request, advertiser):
         try:

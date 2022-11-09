@@ -44,17 +44,15 @@ class AdvertiserView(APIView):
             sort_by = False
             if 'sort_field' in request.GET:
                 sort_field = request.GET.get('sort_field')
+                if sort_field == "status":
+                    sort_field = "status_code"
                 order_by = sort_field
             if 'sort_by' in request.GET:
                 sort_by = request.GET.get('sort_by')
                 if sort_by == 'asc':
                     sort_by = False
-                    if order_by == "status":
-                        sort_by = True
                 else:
                     sort_by = True
-                    if order_by == "status":
-                        sort_by = False
             if 'query' in request.GET:
                 name = request.GET.get('query')
                 query_filter &= Q(name__icontains=name)

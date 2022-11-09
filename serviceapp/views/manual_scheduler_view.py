@@ -110,6 +110,18 @@ class ManualSchedulerView(APIView):
                     "promotion_area": advertiser['promotion_area'],
                     "name": advertiser['name']
                 }
+                if advertiser['status'] == "STATUS_ENABLE":
+                    advertiser_dict['status_code'] = "active"
+                elif advertiser['status'] == "STATUS_DISABLE":
+                    advertiser_dict['status_code'] = "disabled"
+                elif advertiser['status'] == "STATUS_PENDING_VERIFIED":
+                    advertiser_dict['status_code'] = "verification"
+                elif advertiser['status'] == "STATUS_LIMIT":
+                    advertiser_dict['status_code'] = "limit"
+                elif advertiser['status'] in ["STATUS_CONFIRM_FAIL", "STATUS_CONFIRM_FAIL_END", "STATUS_CONFIRM_MODIFY_FAIL"]:
+                    advertiser_dict['status_code'] = "failed"
+                else:
+                    advertiser_dict['status_code'] = "review"
                 advertiser_list.append(Advertisers(**advertiser_dict))
             Advertisers.objects.bulk_create(advertiser_list)
             response["success"] = True
@@ -161,6 +173,18 @@ class ManualSchedulerView(APIView):
                     "promotion_area": advertiser['promotion_area'],
                     "name": advertiser['name']
                 }
+                if advertiser['status'] == "STATUS_ENABLE":
+                    advertiser_dict['status_code'] = "active"
+                elif advertiser['status'] == "STATUS_DISABLE":
+                    advertiser_dict['status_code'] = "disabled"
+                elif advertiser['status'] == "STATUS_PENDING_VERIFIED":
+                    advertiser_dict['status_code'] = "verification"
+                elif advertiser['status'] == "STATUS_LIMIT":
+                    advertiser_dict['status_code'] = "limit"
+                elif advertiser['status'] in ["STATUS_CONFIRM_FAIL", "STATUS_CONFIRM_FAIL_END", "STATUS_CONFIRM_MODIFY_FAIL"]:
+                    advertiser_dict['status_code'] = "failed"
+                else:
+                    advertiser_dict['status_code'] = "review"
                 advertiser_data[advertiser['advertiser_id']] = advertiser_dict
             existing_advertisers = Advertisers.objects.filter(advertiser_id__in=advertiser_ids)
             for advertiser in existing_advertisers:
