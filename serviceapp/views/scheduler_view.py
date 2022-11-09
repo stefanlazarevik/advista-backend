@@ -304,9 +304,19 @@ class SchedulerView(APIView):
                                 "country": data['country'],
                                 "country_code": data['country_code']
                             }
-                            report, created = CountryReports.objects.update_or_create(
-                                advertiser_id=advertiser, report_date=timezone_date, country_code=country_code, defaults=report_dict
-                            )
+                            try:
+                                report, created = CountryReports.objects.update_or_create(
+                                    advertiser_id=advertiser, report_date=timezone_date, country_code=country_code,
+                                    defaults=report_dict
+                                )
+                            except Exception as e:
+                                print(LogHelper.efail(e))
+                                country = CountryReports.objects.filter(advertiser_id=advertiser,
+                                                                        report_date=timezone_date,
+                                                                        country_code=country_code)
+                                if country.exits():
+                                    country = country[0]
+                                    CountryReports.objects.filter(id=country.id).update(**report_dict)
                             # report_list.append(CountryReports(**report_dict))
             # if len(report_list) > 0:
             #     CountryReports.objects.bulk_create(report_list)
