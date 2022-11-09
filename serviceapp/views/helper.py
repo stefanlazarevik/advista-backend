@@ -91,7 +91,7 @@ class AdvertiserCalculateView(generic.DetailView):
 
     def get_total_cost(request, advertiser):
         try:
-            return int(advertiser.total_cost)
+            return round(advertiser.total_cost, 2)
         except:
             return 0
 

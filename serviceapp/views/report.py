@@ -52,7 +52,7 @@ class ReportView(APIView):
                 total_cost=Sum('spend'), ).exclude(country=None).order_by('-total_cost')[:5]
             serializer = CountryReportSerializer(country_reports, many=True)
             # get Activity report
-            daily_reports = Reports.objects.filter(report_date__lte=end_date, report_date__gte=start_date, spend__gt=0).values(
+            daily_reports = Reports.objects.filter(report_date__lte=end_date, report_date__gte=start_date).values(
                 'report_date').annotate(Count('advertiser_id', distinct=True), Sum('spend'), Sum('clicks'),
                                         Sum('conversion'), Sum('impressions')).order_by('-report_date')
             report_serializer = DailyReportSerializer(daily_reports, many=True)
