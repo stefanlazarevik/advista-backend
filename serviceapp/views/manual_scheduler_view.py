@@ -198,7 +198,7 @@ class ManualSchedulerView(APIView):
                                              "license_no", "owner_bc_id", "brand", "country",
                                              "industry", "promotion_center_province", "status", "cellphone_number",
                                              "email", "advertiser_id", "display_timezone", "telephone_number",
-                                             "currency", "promotion_area", "name"])
+                                             "currency", "promotion_area", "name", "status_code"])
             response["success"] = True
         except Exception as e:
             LogHelper.efail(e)
@@ -222,7 +222,11 @@ class ManualSchedulerView(APIView):
                 # x = range(3)
                 # for n in x:
                     # timezone_date = prev_day + timedelta(days=n)
-                timezone_date = request.GET.get('today')
+                if "today" in request.GET:
+                    timezone_date = request.GET.get('today')
+                else:
+                    today = datetime.now().date()
+                    timezone_date = today + timedelta(days=-1)
                 # timezone_date = SchedulerView.convert_datetime_timezone(advertiser.display_timezone)
                 daily_report = ManualSchedulerView.get_report_by_advertiser(request, advertiser.advertiser_id, access_token, timezone_date)
                 if 'data' in daily_report:
@@ -303,7 +307,11 @@ class ManualSchedulerView(APIView):
                 # x = range(3)
                 # for n in x:
                 # timezone_date = prev_day + timedelta(days=n)
-                timezone_date = request.GET.get('today')
+                if "today" in request.GET:
+                    timezone_date = request.GET.get('today')
+                else:
+                    today = datetime.now().date()
+                    timezone_date = today + timedelta(days=-1)
                 # timezone_date = SchedulerView.convert_datetime_timezone(advertiser.display_timezone)
                 daily_report = ManualSchedulerView.get_country_report_by_advertiser(request, advertiser.advertiser_id, access_token, timezone_date)
                 if 'data' in daily_report:
