@@ -193,7 +193,7 @@ class SchedulerView(APIView):
                                              "license_no", "owner_bc_id", "brand", "country",
                                              "industry", "promotion_center_province", "status", "cellphone_number",
                                              "email", "advertiser_id", "display_timezone", "telephone_number",
-                                             "currency", "promotion_area", "name"])
+                                             "currency", "promotion_area", "name", "status_code"])
             response["success"] = True
         except Exception as e:
             LogHelper.efail(e)
