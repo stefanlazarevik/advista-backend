@@ -228,6 +228,7 @@ class ManualSchedulerView(APIView):
                     today = datetime.now().date()
                     timezone_date = today + timedelta(days=-1)
                 # timezone_date = SchedulerView.convert_datetime_timezone(advertiser.display_timezone)
+                LogHelper.ilog(timezone_date)
                 daily_report = ManualSchedulerView.get_report_by_advertiser(request, advertiser.advertiser_id, access_token, timezone_date)
                 if 'data' in daily_report:
                     # daily_report['data']['advertiser_id'] = advertiser
@@ -312,6 +313,7 @@ class ManualSchedulerView(APIView):
                 else:
                     today = datetime.now().date()
                     timezone_date = today + timedelta(days=-1)
+                LogHelper.ilog(timezone_date)
                 # timezone_date = SchedulerView.convert_datetime_timezone(advertiser.display_timezone)
                 daily_report = ManualSchedulerView.get_country_report_by_advertiser(request, advertiser.advertiser_id, access_token, timezone_date)
                 if 'data' in daily_report:
