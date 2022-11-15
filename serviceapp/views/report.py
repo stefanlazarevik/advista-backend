@@ -30,7 +30,7 @@ class ReportView(APIView):
             total_impressions = reports['impressions__sum'] if reports['impressions__sum'] else 0
             report = {
                 "conversions": total_conversions,
-                "cost": round(total_cost, 2),
+                "total_cost": round(total_cost, 2),
                 "clicks": total_clicks,
                 "impressions": total_impressions
             }
