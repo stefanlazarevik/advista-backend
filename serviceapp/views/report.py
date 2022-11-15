@@ -46,6 +46,10 @@ class ReportView(APIView):
             else:
                 report['ctr'] = 0
                 report['cpm'] = 0
+            if report['conversions'] != 0:
+                report['cpa'] = round((report['total_cost'] / report['conversions']), 2)
+            else:
+                report['cpa'] = 0
             # get country report
             country_reports = CountryReports.objects.filter(report_date__gte=start_date,
                                                             report_date__lte=end_date).values('country', 'country_code').annotate(
