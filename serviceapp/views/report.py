@@ -36,13 +36,13 @@ class ReportView(APIView):
             }
             if report['clicks'] != 0:
                 report['conversion_rate'] = round(report['conversions']/(report['clicks']/100), 2)
-                report['cpc'] = round((report['cost'] / report['clicks']), 2)
+                report['cpc'] = round((report['total_cost'] / report['clicks']), 2)
             else:
                 report['conversion_rate'] = 0
                 report['cpc'] = 0
             if report['impressions'] != 0:
                 report['ctr'] = round((report['clicks'] / report['impressions']) * 100, 2)
-                report['cpm'] = round((report['cost'] / report['impressions']) * 1000, 2)
+                report['cpm'] = round((report['total_cost'] / report['impressions']) * 1000, 2)
             else:
                 report['ctr'] = 0
                 report['cpm'] = 0
