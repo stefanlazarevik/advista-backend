@@ -1,3 +1,5 @@
+import json
+
 import requests
 from datetime import datetime, timezone
 
@@ -22,7 +24,8 @@ def get_access_token():
 
 
 def get_tonic_daily_report(access_token):
-    path = BASE_URL + '/privileged/v3/reports/'
+    tonic_result = []
+    path = BASE_URL + '/privileged/v3/reports/tracking'
     date = datetime_timezone()
     params = {
         'date': date,
@@ -32,5 +35,19 @@ def get_tonic_daily_report(access_token):
         "Authorization": "Bearer {}".format(access_token),
         "Content-Type": 'application/json',
     }
-    rsp = requests.post(path, params=params, headers=headers)
-    return rsp.json()
+    rsp = requests.get(path, params=params, headers=headers)
+    for i in rsp.json():
+        try:
+            tonic_result.append({
+                'report_date': i['date'],
+                'revenue': i['revenueUsd'],
+                'tonic_campaign_id': i['subid1'],
+                'tonic_campaign_name': i['campaign_name'],
+                'clicks': i['clicks'],
+                'keyword': i['keyword'],
+                'adtitle': i['adtitle'],
+                'device': i['device'],
+            })
+        except Exception as e:
+            print(e)
+    return tonic_result

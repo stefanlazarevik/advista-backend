@@ -8,7 +8,7 @@ from django.db.models import Sum, Count, Q
 from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from serviceapp.models import TiktokInfo, Advertisers, Reports, CountryReports, Partners
+from serviceapp.models import TiktokInfo, Advertisers, Reports, CountryReports, Partners, Campaigns, CampaignReports
 from rest_framework.decorators import api_view, permission_classes
 
 from serviceapp.serializers.report_serializer import CountryReportSerializer, DailyReportSerializer
@@ -431,16 +431,28 @@ class SchedulerView(APIView):
         dt = now_timezone.strftime("%Y-%m-%d")
         return dt
 
+    def user_campaning_list(request):
+        data = Campaigns.objects.all()
+        camping_list = [i.campaign_id for i in data]
+        return camping_list
+
     def get_tonic_report(request):
         response = {}
         try:
             token = SchedulerView.get_tonic_api_token(request)
+            # token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkbG4iOiJGVWZXcU1Sd3pRX2dPdGR3M1I2QlhGWkZ4NENIY3NhaTk0RFVrV2EzVXpqVDVpTWFkRWN3UzlWbTFjNEFUMmJVejVhR0NqcWd4bFFaOV9fY0FoS1V5ZEc1S19vU0dtMm5wcTRRZWFMX0o3blNKVVRPaTNFVXF6ZU9GVEZHZXc0NUVRSGhId2FwSlI1M3NRODdWQmNPNTdKVEdqcTQ5QUlBcm9ERWR1OGQyck0iLCJleHAiOjE2Njg3MTA2MTl9.pt8mT4Uwzuqj7qRYP6R7WYqaY_ImcpGYBNSqmX-l8S0'
             tonic_data = get_tonic_daily_report(token)
-            print(tonic_data)
+            campign_list = SchedulerView.user_campaning_list(request)
+            set_campaign_id = SchedulerView.update_tonic_campaign_id(request, campign_list, tonic_data)
+
+            create_campaign_reports, update_campaign_reports = SchedulerView.save_campign_resport(request,
+                                                                                                  set_campaign_id)
+            if create_campaign_reports:
+                CampaignReports.objects.bulk_create(create_campaign_reports)
+            if update_campaign_reports:
+                CampaignReports.objects.bulk_update(create_campaign_reports, ['revenue'])
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
-            # print("The time of execution of above program is :",
-            #       (end - start) * 10 ** 3, "ms")
         except Exception as e:
             LogHelper.efail(e)
             response["success"] = False
@@ -450,3 +462,48 @@ class SchedulerView(APIView):
     def get_tonic_api_token(request):
         data = get_access_token().json()
         return data['token']
+
+    def update_tonic_campaign_id(self, campaign_list, tonic_data):
+        result = {}
+        try:
+            for campaign in campaign_list:
+                revenue = 0.0
+                for i in tonic_data:
+                    if i['tonic_campaign_id'] == campaign:
+                        revenue = round(revenue + float(i['revenue']), 2)
+                        i['revenue'] = revenue
+                        i['campaign_id'] = i['tonic_campaign_id']
+
+                        if campaign not in result:
+                            result[campaign] = i
+                        else:
+                            result[campaign]['revenue'] = revenue
+        except Exception as e:
+            print(e)
+        return result
+
+    def save_campign_resport(self, set_campaign_id):
+        create_campaign_reports = []
+        update_campaign_reports = []
+        for i in set_campaign_id:
+            data = set_campaign_id[i]
+            campaign = Campaigns.objects.get(campaign_id=i)
+            campaign_reports = CampaignReports.objects.filter(campaign_id=campaign).first()
+            if campaign_reports is None:
+                create_campaign_reports.append(CampaignReports(campaign_id=campaign, report_date=data['report_date'],
+                                                               revenue=data['revenue'],
+                                                               tonic_campaign_id=data['tonic_campaign_id'],
+                                                               tonic_campaign_name=data['tonic_campaign_name'],
+                                                               clicks=data['clicks'],
+                                                               keyword=data['keyword'], adtitle=data['adtitle'],
+                                                               device=data['device']))
+            else:
+                update_campaign_reports.append(
+                    CampaignReports(id=campaign_reports.id, campaign_id=campaign, report_date=data['report_date'],
+                                    revenue=data['revenue'],
+                                    tonic_campaign_id=data['tonic_campaign_id'],
+                                    tonic_campaign_name=data['tonic_campaign_name'],
+                                    clicks=data['clicks'],
+                                    keyword=data['keyword'], adtitle=data['adtitle'],
+                                    device=data['device']))
+        return create_campaign_reports, update_campaign_reports
