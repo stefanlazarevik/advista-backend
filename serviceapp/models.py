@@ -114,6 +114,7 @@ class Reports(models.Model):
     spend = models.FloatField(null=True)
     cpc = models.FloatField(null=True)
     report_date = models.DateField()
+    revenue = models.FloatField(null=True)
 
     class Meta:
         db_table = "reports"
@@ -169,3 +170,21 @@ class Campaigns(models.Model):
 
     class Meta:
         db_table = "campaigns"
+
+
+class CampaignReports(models.Model):
+    campaign_id = models.ForeignKey(Campaigns, on_delete=models.SET_NULL, null=True, to_field='campaign_id',
+                                      db_column='campaign_id')
+    report_date = models.DateField()
+    revenue = models.FloatField()
+    tonic_campaign_id = models.CharField(max_length=100, null=True)
+    tonic_campaign_name = models.CharField(max_length=255, null=True)
+    clicks = models.IntegerField()
+    keyword = models.CharField(max_length=100, null=True)
+    adtitle = models.CharField(max_length=100, null=True)
+    device = models.CharField(max_length=100, null=True)
+
+    class Meta:
+        db_table = "campaign-report"
+
+
