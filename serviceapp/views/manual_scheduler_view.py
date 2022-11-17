@@ -6,7 +6,7 @@ from django.db.models import Sum, Count, Q
 from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from serviceapp.models import TiktokInfo, Advertisers, Reports, CountryReports, Partners
+from serviceapp.models import TiktokInfo, Advertisers, Reports, CountryReports, Partners, Campaigns
 from rest_framework.decorators import api_view, permission_classes
 
 from serviceapp.serializers.report_serializer import CountryReportSerializer, DailyReportSerializer
@@ -29,6 +29,8 @@ class ManualSchedulerView(APIView):
             country_reports = ManualSchedulerView.get_daily_country_report(request)
             print("country_reports end-----------")
             partners = ManualSchedulerView.get_daily_partners(request)
+            print("partners end-----------")
+            campaigns = ManualSchedulerView.get_daily_campaigns(request)
             print("scheduler end-----------")
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
@@ -420,6 +422,64 @@ class ManualSchedulerView(APIView):
             response["success"] = False
             response["message"] = str(e)
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_daily_campaigns(request):
+        response = {}
+        try:
+            tiktok_info = TiktokInfo.objects.get(id=1)
+            access_token = tiktok_info.access_token
+            advertisers = Advertisers.objects.all()
+            for advertiser in advertisers:
+                campaigns = ManualSchedulerView.get_campaign_by_advertiser(request, advertiser.advertiser_id, access_token)
+                if 'data' in campaigns:
+                    for campaign in campaigns['data']:
+                        campaign_dict = {
+                            "advertiser_id": advertiser,
+                            "is_new_structure": campaign["is_new_structure"],
+                            "modify_time": campaign["modify_time"] if 'modify_time' in campaign else None,
+                            "campaign_id": campaign["campaign_id"],
+                            "operation_status": campaign["operation_status"] if 'operation_status' in campaign else None,
+                            "objective": campaign["objective"] if 'objective' in campaign else None,
+                            "is_smart_performance_campaign": campaign["is_smart_performance_campaign"] if 'is_smart_performance_campaign' in campaign else None,
+                            "budget_mode": campaign["budget_mode"] if 'budget_mode' in campaign else None,
+                            "deep_bid_type": campaign["deep_bid_type"] if 'deep_bid_type' in campaign else None,
+                            "budget": campaign["budget"] if 'budget' in campaign else None,
+                            "campaign_name": campaign["campaign_name"] if 'campaign_name' in campaign else None,
+                            "campaign_type": campaign["campaign_type"] if 'campaign_type' in campaign else None,
+                            "create_time": campaign["create_time"],
+                            "rf_campaign_type": campaign["rf_campaign_type"] if 'rf_campaign_type' in campaign else None,
+                            "objective_type": campaign["objective_type"] if 'objective_type' in campaign else None,
+                            "secondary_status": campaign["secondary_status"] if 'secondary_status' in campaign else None,
+                            "roas_bid": campaign["roas_bid"] if 'roas_bid' in campaign else None,
+                            "app_promotion_type": campaign["app_promotion_type"] if 'app_promotion_type' in campaign else None
+                        }
+                        report, created = Campaigns.objects.update_or_create(
+                            campaign_id=campaign_dict["campaign_id"], defaults=campaign_dict
+                        )
+            response["success"] = True
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            LogHelper.efail(e)
+            response["success"] = False
+            response["message"] = str(e)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_campaign_by_advertiser(request, advertiser_id, access_token):
+        response = {}
+        try:
+            # Args in JSON format
+            path = "/campaign/get/"
+
+            # Args in JSON format
+            my_args = "{\"advertiser_id\": \"%s\"}" % (advertiser_id)
+            reports = tiktok_get(my_args, path, access_token)
+            response["data"] = reports['data']['list']
+            response["success"] = True
+        except Exception as e:
+            LogHelper.efail(e)
+            response["success"] = False
+            response["message"] = str(e)
+        return response
 
     def convert_datetime_timezone(tz):
         now_utc = datetime.now(timezone("UTC"))

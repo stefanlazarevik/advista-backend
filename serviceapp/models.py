@@ -145,3 +145,27 @@ class Partners(models.Model):
 
     class Meta:
         db_table = "partners"
+
+
+class Campaigns(models.Model):
+    campaign_id = models.CharField(max_length=100, unique=True)
+    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id', db_column='advertiser_id')
+    is_new_structure = models.BooleanField(default=True)
+    modify_time = models.DateTimeField(null=True)
+    operation_status = models.CharField(max_length=100, null=True)
+    objective = models.CharField(max_length=100, null=True)
+    is_smart_performance_campaign = models.BooleanField(default=False)
+    budget_mode = models.CharField(max_length=100, null=True)
+    deep_bid_type = models.CharField(max_length=100, null=True)
+    budget = models.FloatField(null=True)
+    campaign_name = models.CharField(max_length=255, null=True)
+    campaign_type = models.CharField(max_length=100, null=True)
+    create_time = models.DateTimeField(null=True)
+    rf_campaign_type = models.CharField(max_length=100, null=True)
+    objective_type = models.CharField(max_length=100, null=True)
+    secondary_status = models.CharField(max_length=100, null=True)
+    roas_bid = models.FloatField(null=True)
+    app_promotion_type = models.CharField(max_length=100, null=True)
+
+    class Meta:
+        db_table = "campaigns"
