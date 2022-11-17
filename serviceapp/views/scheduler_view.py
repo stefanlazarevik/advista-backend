@@ -1,4 +1,6 @@
 import json
+import time
+
 from pytz import timezone
 import pycountry
 from django.contrib.auth.decorators import login_required
@@ -14,6 +16,8 @@ from serviceapp.views.tiktok_api import tiktok_get
 from serviceapp.views.helper import LogHelper, UserPermissions
 from datetime import datetime, timedelta, date
 
+from serviceapp.views.tonic_api import get_access_token, get_tonic_daily_report
+
 
 class SchedulerView(APIView):
 
@@ -21,10 +25,11 @@ class SchedulerView(APIView):
     def get_scheduler_data(request):
         response = {}
         try:
-            advertisers = SchedulerView.get_daily_advertisers(request)
-            reports = SchedulerView.get_daily_report(request)
-            country_reports = SchedulerView.get_daily_country_report(request)
-            partners = SchedulerView.get_daily_partners(request)
+            # advertisers = SchedulerView.get_daily_advertisers(request)
+            # reports = SchedulerView.get_daily_report(request)
+            # country_reports = SchedulerView.get_daily_country_report(request)
+            # partners = SchedulerView.get_daily_partners(request)
+            tonic_reports = SchedulerView.get_tonic_report(request)
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
@@ -44,19 +49,22 @@ class SchedulerView(APIView):
 
             # Args in JSON format
             path = "/oauth2/advertiser/get/"
-            my_args = "{\"access_token\": \"%s\", \"secret\": \"%s\", \"app_id\": \"%s\"}" % (access_token, secret, app_id)
+            my_args = "{\"access_token\": \"%s\", \"secret\": \"%s\", \"app_id\": \"%s\"}" % (
+                access_token, secret, app_id)
             advertisers = tiktok_get(my_args, path, access_token)
             for advertiser in advertisers['data']['list']:
                 advertiser_ids.append(advertiser['advertiser_id'])
             # print(advertiser_ids)
             print(len(advertiser_ids))
-            existing_advertisers = Advertisers.objects.values_list('advertiser_id', flat=True).filter(advertiser_id__in=advertiser_ids)
+            existing_advertisers = Advertisers.objects.values_list('advertiser_id', flat=True).filter(
+                advertiser_id__in=advertiser_ids)
             new_advertisers = list(set(advertiser_ids).difference(existing_advertisers))
             # print(new_advertisers)
             print(len(new_advertisers))
-            if len(new_advertisers) > 0 :
+            if len(new_advertisers) > 0:
                 save_advertisers = SchedulerView.save_new_advertisers(request, new_advertisers, access_token)
-            update_advertisers = SchedulerView.update_existing_advertisers(request, list(existing_advertisers), access_token)
+            update_advertisers = SchedulerView.update_existing_advertisers(request, list(existing_advertisers),
+                                                                           access_token)
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
@@ -113,7 +121,8 @@ class SchedulerView(APIView):
                     advertiser_dict['status_code'] = "verification"
                 elif advertiser['status'] == "STATUS_LIMIT":
                     advertiser_dict['status_code'] = "limit"
-                elif advertiser['status'] in ["STATUS_CONFIRM_FAIL", "STATUS_CONFIRM_FAIL_END", "STATUS_CONFIRM_MODIFY_FAIL"]:
+                elif advertiser['status'] in ["STATUS_CONFIRM_FAIL", "STATUS_CONFIRM_FAIL_END",
+                                              "STATUS_CONFIRM_MODIFY_FAIL"]:
                     advertiser_dict['status_code'] = "failed"
                 else:
                     advertiser_dict['status_code'] = "review"
@@ -176,7 +185,8 @@ class SchedulerView(APIView):
                     advertiser_dict['status_code'] = "verification"
                 elif advertiser['status'] == "STATUS_LIMIT":
                     advertiser_dict['status_code'] = "limit"
-                elif advertiser['status'] in ["STATUS_CONFIRM_FAIL", "STATUS_CONFIRM_FAIL_END", "STATUS_CONFIRM_MODIFY_FAIL"]:
+                elif advertiser['status'] in ["STATUS_CONFIRM_FAIL", "STATUS_CONFIRM_FAIL_END",
+                                              "STATUS_CONFIRM_MODIFY_FAIL"]:
                     advertiser_dict['status_code'] = "failed"
                 else:
                     advertiser_dict['status_code'] = "review"
@@ -216,10 +226,11 @@ class SchedulerView(APIView):
             for advertiser in advertisers:
                 # x = range(3)
                 # for n in x:
-                    # timezone_date = prev_day + timedelta(days=n)
+                # timezone_date = prev_day + timedelta(days=n)
                 # timezone_date = request.GET.get('today')
                 timezone_date = SchedulerView.convert_datetime_timezone(advertiser.display_timezone)
-                daily_report = SchedulerView.get_report_by_advertiser(request, advertiser.advertiser_id, access_token, timezone_date)
+                daily_report = SchedulerView.get_report_by_advertiser(request, advertiser.advertiser_id, access_token,
+                                                                      timezone_date)
                 if 'data' in daily_report:
                     # daily_report['data']['advertiser_id'] = advertiser
                     # daily_report['data']['report_date'] = daily_report['report_date']
@@ -261,7 +272,9 @@ class SchedulerView(APIView):
         try:
             # Args in JSON format
             path = "/report/integrated/get/"
-            metrics_list = ["stat_cost", "cpc", "cpm", "show_cnt", "click_cnt", "ctr", "time_attr_convert_cnt", "time_attr_conversion_cost", "time_attr_conversion_rate", "convert_cnt", "conversion_cost", "conversion_rate", "skan_convert_cnt", "skan_conversion_cost", "skan_conversion_rate"]
+            metrics_list = ["stat_cost", "cpc", "cpm", "show_cnt", "click_cnt", "ctr", "time_attr_convert_cnt",
+                            "time_attr_conversion_cost", "time_attr_conversion_rate", "convert_cnt", "conversion_cost",
+                            "conversion_rate", "skan_convert_cnt", "skan_conversion_cost", "skan_conversion_rate"]
             metrics = json.dumps(metrics_list)
             data_level = 'AUCTION_ADVERTISER'
             end_date = today
@@ -300,7 +313,8 @@ class SchedulerView(APIView):
                 # timezone_date = prev_day + timedelta(days=n)
                 # timezone_date = request.GET.get('today')
                 timezone_date = SchedulerView.convert_datetime_timezone(advertiser.display_timezone)
-                daily_report = SchedulerView.get_country_report_by_advertiser(request, advertiser.advertiser_id, access_token, timezone_date)
+                daily_report = SchedulerView.get_country_report_by_advertiser(request, advertiser.advertiser_id,
+                                                                              access_token, timezone_date)
                 if 'data' in daily_report:
                     report_data = daily_report['data']
                     for report in report_data:
@@ -357,7 +371,9 @@ class SchedulerView(APIView):
         try:
             # Args in JSON format
             path = "/report/integrated/get/"
-            metrics_list = ["spend", "impressions", "cpc", "cpm", "ctr", "reach", "clicks", "stat_cost", "show_cnt", "click_cnt", "time_attr_convert_cnt", "time_attr_conversion_cost", "time_attr_conversion_rate"]
+            metrics_list = ["spend", "impressions", "cpc", "cpm", "ctr", "reach", "clicks", "stat_cost", "show_cnt",
+                            "click_cnt", "time_attr_convert_cnt", "time_attr_conversion_cost",
+                            "time_attr_conversion_rate"]
             metrics = json.dumps(metrics_list)
             data_level = 'AUCTION_ADVERTISER'
             end_date = today
@@ -415,5 +431,22 @@ class SchedulerView(APIView):
         dt = now_timezone.strftime("%Y-%m-%d")
         return dt
 
+    def get_tonic_report(request):
+        response = {}
+        try:
+            token = SchedulerView.get_tonic_api_token(request)
+            tonic_data = get_tonic_daily_report(token)
+            print(tonic_data)
+            response["success"] = True
+            return Response(response, status=status.HTTP_200_OK)
+            # print("The time of execution of above program is :",
+            #       (end - start) * 10 ** 3, "ms")
+        except Exception as e:
+            LogHelper.efail(e)
+            response["success"] = False
+            response["message"] = str(e)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
-
+    def get_tonic_api_token(request):
+        data = get_access_token().json()
+        return data['token']
