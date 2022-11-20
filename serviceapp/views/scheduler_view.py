@@ -451,6 +451,14 @@ class SchedulerView(APIView):
                 CampaignReports.objects.bulk_create(create_campaign_reports)
             if update_campaign_reports:
                 CampaignReports.objects.bulk_update(create_campaign_reports, ['revenue'])
+            advertisers_list = SchedulerView.get_advertisers_list(request)
+            advertisers_campaign_objects = {
+                advertiser_id: SchedulerView.get_advertiser_campaign_list(request, advertiser_id) for advertiser_id in
+                advertisers_list}
+            advertiser_revenue_list = {i: SchedulerView.get_advertiser_revenue(request, advertisers_campaign_objects[i])
+                                       for i in advertisers_campaign_objects}
+            advertiser_reveune = SchedulerView.set_advertiser_reveune(request, advertiser_revenue_list)
+            # print(advertiser_reveune)
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
@@ -507,3 +515,50 @@ class SchedulerView(APIView):
                                     keyword=data['keyword'], adtitle=data['adtitle'],
                                     device=data['device']))
         return create_campaign_reports, update_campaign_reports
+
+    def get_advertisers_list(self):
+        data = Advertisers.objects.all()
+        data_list = [i.advertiser_id for i in data]
+        return data_list
+
+    def get_advertiser_revenue(self, campaign_list):
+        result = {}
+        if campaign_list:
+            data = CampaignReports.objects.filter(campaign_id__in=campaign_list)
+            for i in data:
+                date = i.report_date.strftime("%Y-%m-%d")
+                if date in result:
+                    result[date] = round(result[date] + float(i.revenue), 2)
+                else:
+                    result[date] = i.revenue
+                    # revenue = round(revenue + float(i.revenue), 2)
+        return result
+
+    def get_advertiser_campaign_list(self, advertiser_id):
+        data = Campaigns.objects.filter(advertiser_id=advertiser_id)
+        data_list = [i.campaign_id for i in data]
+        return data_list
+
+    def set_advertiser_reveune(self, advertiser_revenue_list):
+        count = 0
+        for advertiser in advertiser_revenue_list:
+            date_list = advertiser_revenue_list[advertiser]
+            for date in date_list:
+                try:
+                    revenue = date_list[date]
+                    reports = Reports.objects.filter(advertiser_id=advertiser, report_date=date)
+                    if reports:
+                        try:
+                            for i in reports:
+                                # print(advertiser, date)
+                                # print(i.advertiser_id.advertiser_id, i.report_date)
+                                # print('-------------------')
+                                i.revenue = revenue
+                                i.save()
+                                count = count + 1
+                        except Exception as e:
+                            continue
+                except Exception as e:
+                    print(e)
+                    continue
+        return count

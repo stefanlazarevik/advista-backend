@@ -180,9 +180,9 @@ class CampaignReports(models.Model):
     tonic_campaign_id = models.CharField(max_length=100, null=True)
     tonic_campaign_name = models.CharField(max_length=255, null=True)
     clicks = models.IntegerField()
-    keyword = models.CharField(max_length=100, null=True)
-    adtitle = models.CharField(max_length=100, null=True)
-    device = models.CharField(max_length=100, null=True)
+    keyword = models.CharField(max_length=255, null=True)
+    adtitle = models.CharField(max_length=255, null=True)
+    device = models.CharField(max_length=255, null=True)
 
     class Meta:
         db_table = "campaign-report"
