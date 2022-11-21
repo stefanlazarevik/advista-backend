@@ -185,6 +185,6 @@ class CampaignReports(models.Model):
     device = models.CharField(max_length=255, null=True)
 
     class Meta:
-        db_table = "campaign-report"
+        db_table = "campaign_report"
 
 

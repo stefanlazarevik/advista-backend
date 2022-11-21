@@ -23,12 +23,12 @@ def get_access_token():
     return rsp
 
 
-def get_tonic_daily_report(access_token):
+def get_tonic_daily_report(timezone_date, access_token):
     tonic_result = []
     path = BASE_URL + '/privileged/v3/reports/tracking'
-    date = datetime_timezone()
+
     params = {
-        'date': date,
+        'date': timezone_date,
         'output': 'json'
     }
     headers = {
