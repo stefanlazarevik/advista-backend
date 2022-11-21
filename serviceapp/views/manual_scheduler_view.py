@@ -23,7 +23,7 @@ class ManualSchedulerView(APIView):
         response = {}
         try:
             print("scheduler start-----------")
-            # advertisers = ManualSchedulerView.get_daily_advertisers(request)
+            advertisers = ManualSchedulerView.get_daily_advertisers(request)
             print("advertisers end-----------")
             # reports = ManualSchedulerView.get_daily_report(request)
             print("reports end-----------")
@@ -31,7 +31,7 @@ class ManualSchedulerView(APIView):
             print("country_reports end-----------")
             # partners = ManualSchedulerView.get_daily_partners(request)
             print("partners end-----------")
-            # campaigns = ManualSchedulerView.get_daily_campaigns(request)
+            campaigns = ManualSchedulerView.get_daily_campaigns(request)
             print("campaigns end-----------")
             LogHelper.ex_time_init("start Tonic")
             tonic_reports = ManualSchedulerView.get_tonic_report(request)
@@ -56,19 +56,18 @@ class ManualSchedulerView(APIView):
 
             # Args in JSON format
             path = "/oauth2/advertiser/get/"
-            my_args = "{\"access_token\": \"%s\", \"secret\": \"%s\", \"app_id\": \"%s\"}" % (access_token, secret, app_id)
+            my_args = "{\"access_token\": \"%s\", \"secret\": \"%s\", \"app_id\": \"%s\"}" % (
+                access_token, secret, app_id)
             advertisers = tiktok_get(my_args, path, access_token)
             for advertiser in advertisers['data']['list']:
                 advertiser_ids.append(advertiser['advertiser_id'])
-            # print(advertiser_ids)
-            print(len(advertiser_ids))
-            existing_advertisers = Advertisers.objects.values_list('advertiser_id', flat=True).filter(advertiser_id__in=advertiser_ids)
+            existing_advertisers = Advertisers.objects.values_list('advertiser_id', flat=True).filter(
+                advertiser_id__in=advertiser_ids)
             new_advertisers = list(set(advertiser_ids).difference(existing_advertisers))
-            # print(new_advertisers)
-            print(len(new_advertisers))
-            if len(new_advertisers) > 0 :
+            if len(new_advertisers) > 0:
                 save_advertisers = ManualSchedulerView.save_new_advertisers(request, new_advertisers, access_token)
-            update_advertisers = ManualSchedulerView.update_existing_advertisers(request, list(existing_advertisers), access_token)
+            update_advertisers = ManualSchedulerView.update_existing_advertisers(request, list(existing_advertisers),
+                                                                                 access_token)
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
@@ -125,7 +124,8 @@ class ManualSchedulerView(APIView):
                     advertiser_dict['status_code'] = "verification"
                 elif advertiser['status'] == "STATUS_LIMIT":
                     advertiser_dict['status_code'] = "limit"
-                elif advertiser['status'] in ["STATUS_CONFIRM_FAIL", "STATUS_CONFIRM_FAIL_END", "STATUS_CONFIRM_MODIFY_FAIL"]:
+                elif advertiser['status'] in ["STATUS_CONFIRM_FAIL", "STATUS_CONFIRM_FAIL_END",
+                                              "STATUS_CONFIRM_MODIFY_FAIL"]:
                     advertiser_dict['status_code'] = "failed"
                 else:
                     advertiser_dict['status_code'] = "review"
@@ -188,7 +188,8 @@ class ManualSchedulerView(APIView):
                     advertiser_dict['status_code'] = "verification"
                 elif advertiser['status'] == "STATUS_LIMIT":
                     advertiser_dict['status_code'] = "limit"
-                elif advertiser['status'] in ["STATUS_CONFIRM_FAIL", "STATUS_CONFIRM_FAIL_END", "STATUS_CONFIRM_MODIFY_FAIL"]:
+                elif advertiser['status'] in ["STATUS_CONFIRM_FAIL", "STATUS_CONFIRM_FAIL_END",
+                                              "STATUS_CONFIRM_MODIFY_FAIL"]:
                     advertiser_dict['status_code'] = "failed"
                 else:
                     advertiser_dict['status_code'] = "review"
@@ -228,7 +229,7 @@ class ManualSchedulerView(APIView):
             for advertiser in advertisers:
                 # x = range(3)
                 # for n in x:
-                    # timezone_date = prev_day + timedelta(days=n)
+                # timezone_date = prev_day + timedelta(days=n)
                 if "today" in request.GET:
                     timezone_date = request.GET.get('today')
                 else:
@@ -236,7 +237,8 @@ class ManualSchedulerView(APIView):
                     timezone_date = today + timedelta(days=-1)
                 # timezone_date = SchedulerView.convert_datetime_timezone(advertiser.display_timezone)
                 LogHelper.ilog(timezone_date)
-                daily_report = ManualSchedulerView.get_report_by_advertiser(request, advertiser.advertiser_id, access_token, timezone_date)
+                daily_report = ManualSchedulerView.get_report_by_advertiser(request, advertiser.advertiser_id,
+                                                                            access_token, timezone_date)
                 if 'data' in daily_report:
                     # daily_report['data']['advertiser_id'] = advertiser
                     # daily_report['data']['report_date'] = daily_report['report_date']
@@ -278,7 +280,9 @@ class ManualSchedulerView(APIView):
         try:
             # Args in JSON format
             path = "/report/integrated/get/"
-            metrics_list = ["stat_cost", "cpc", "cpm", "show_cnt", "click_cnt", "ctr", "time_attr_convert_cnt", "time_attr_conversion_cost", "time_attr_conversion_rate", "convert_cnt", "conversion_cost", "conversion_rate", "skan_convert_cnt", "skan_conversion_cost", "skan_conversion_rate"]
+            metrics_list = ["stat_cost", "cpc", "cpm", "show_cnt", "click_cnt", "ctr", "time_attr_convert_cnt",
+                            "time_attr_conversion_cost", "time_attr_conversion_rate", "convert_cnt", "conversion_cost",
+                            "conversion_rate", "skan_convert_cnt", "skan_conversion_cost", "skan_conversion_rate"]
             metrics = json.dumps(metrics_list)
             data_level = 'AUCTION_ADVERTISER'
             end_date = today
@@ -322,7 +326,8 @@ class ManualSchedulerView(APIView):
                     timezone_date = today + timedelta(days=-1)
                 LogHelper.ilog(timezone_date)
                 # timezone_date = SchedulerView.convert_datetime_timezone(advertiser.display_timezone)
-                daily_report = ManualSchedulerView.get_country_report_by_advertiser(request, advertiser.advertiser_id, access_token, timezone_date)
+                daily_report = ManualSchedulerView.get_country_report_by_advertiser(request, advertiser.advertiser_id,
+                                                                                    access_token, timezone_date)
                 if 'data' in daily_report:
                     report_data = daily_report['data']
                     for report in report_data:
@@ -352,11 +357,14 @@ class ManualSchedulerView(APIView):
                             }
                             try:
                                 report, created = CountryReports.objects.update_or_create(
-                                    advertiser_id=advertiser, report_date=timezone_date, country_code=country_code, defaults=report_dict
+                                    advertiser_id=advertiser, report_date=timezone_date, country_code=country_code,
+                                    defaults=report_dict
                                 )
                             except Exception as e:
                                 print(LogHelper.efail(e))
-                                country = CountryReports.objects.filter(advertiser_id=advertiser, report_date=timezone_date, country_code=country_code)
+                                country = CountryReports.objects.filter(advertiser_id=advertiser,
+                                                                        report_date=timezone_date,
+                                                                        country_code=country_code)
                                 if country.exits():
                                     country = country[0]
                                     CountryReports.objects.filter(id=country.id).update(**report_dict)
@@ -376,7 +384,9 @@ class ManualSchedulerView(APIView):
         try:
             # Args in JSON format
             path = "/report/integrated/get/"
-            metrics_list = ["spend", "impressions", "cpc", "cpm", "ctr", "reach", "clicks", "stat_cost", "show_cnt", "click_cnt", "time_attr_convert_cnt", "time_attr_conversion_cost", "time_attr_conversion_rate"]
+            metrics_list = ["spend", "impressions", "cpc", "cpm", "ctr", "reach", "clicks", "stat_cost", "show_cnt",
+                            "click_cnt", "time_attr_convert_cnt", "time_attr_conversion_cost",
+                            "time_attr_conversion_rate"]
             metrics = json.dumps(metrics_list)
             data_level = 'AUCTION_ADVERTISER'
             end_date = today
@@ -430,37 +440,83 @@ class ManualSchedulerView(APIView):
 
     def get_daily_campaigns(request):
         response = {}
+        update_campaign_data = []
+        create_campaign_data = []
         try:
             tiktok_info = TiktokInfo.objects.get(id=1)
             access_token = tiktok_info.access_token
             advertisers = Advertisers.objects.all()
             for advertiser in advertisers:
-                campaigns = ManualSchedulerView.get_campaign_by_advertiser(request, advertiser.advertiser_id, access_token)
+                campaigns = ManualSchedulerView.get_campaign_by_advertiser(request, advertiser.advertiser_id,
+                                                                           access_token)
                 if 'data' in campaigns:
+                    campaigns_ids = [campaign["campaign_id"] for campaign in campaigns['data']]
+                    existing_campaign = Campaigns.objects.values_list('campaign_id', flat=True).filter(
+                        campaign_id__in=campaigns_ids)
+                    new_campaign = list(set(campaigns_ids).difference(existing_campaign))
                     for campaign in campaigns['data']:
-                        campaign_dict = {
-                            "advertiser_id": advertiser,
-                            "is_new_structure": campaign["is_new_structure"],
-                            "modify_time": campaign["modify_time"] if 'modify_time' in campaign else None,
-                            "campaign_id": campaign["campaign_id"],
-                            "operation_status": campaign["operation_status"] if 'operation_status' in campaign else None,
-                            "objective": campaign["objective"] if 'objective' in campaign else None,
-                            "is_smart_performance_campaign": campaign["is_smart_performance_campaign"] if 'is_smart_performance_campaign' in campaign else None,
-                            "budget_mode": campaign["budget_mode"] if 'budget_mode' in campaign else None,
-                            "deep_bid_type": campaign["deep_bid_type"] if 'deep_bid_type' in campaign else None,
-                            "budget": campaign["budget"] if 'budget' in campaign else None,
-                            "campaign_name": campaign["campaign_name"] if 'campaign_name' in campaign else None,
-                            "campaign_type": campaign["campaign_type"] if 'campaign_type' in campaign else None,
-                            "create_time": campaign["create_time"],
-                            "rf_campaign_type": campaign["rf_campaign_type"] if 'rf_campaign_type' in campaign else None,
-                            "objective_type": campaign["objective_type"] if 'objective_type' in campaign else None,
-                            "secondary_status": campaign["secondary_status"] if 'secondary_status' in campaign else None,
-                            "roas_bid": campaign["roas_bid"] if 'roas_bid' in campaign else None,
-                            "app_promotion_type": campaign["app_promotion_type"] if 'app_promotion_type' in campaign else None
-                        }
-                        report, created = Campaigns.objects.update_or_create(
-                            campaign_id=campaign_dict["campaign_id"], defaults=campaign_dict
-                        )
+                        if campaign['campaign_id'] not in new_campaign:
+                            update_campaign_data.append(Campaigns(
+                                pk=campaign["campaign_id"],
+                                advertiser_id=advertiser,
+                                is_new_structure=campaign["is_new_structure"],
+                                modify_time=campaign["modify_time"] if 'modify_time' in campaign else None,
+                                campaign_id=campaign["campaign_id"],
+                                operation_status=campaign[
+                                    "operation_status"] if 'operation_status' in campaign else None,
+                                objective=campaign["objective"] if 'objective' in campaign else None,
+                                is_smart_performance_campaign=campaign[
+                                    "is_smart_performance_campaign"] if 'is_smart_performance_campaign' in campaign else None,
+                                budget_mode=campaign["budget_mode"] if 'budget_mode' in campaign else None,
+                                deep_bid_type=campaign["deep_bid_type"] if 'deep_bid_type' in campaign else None,
+                                budget=campaign["budget"] if 'budget' in campaign else None,
+                                campaign_name=campaign["campaign_name"] if 'campaign_name' in campaign else None,
+                                campaign_type=campaign["campaign_type"] if 'campaign_type' in campaign else None,
+                                create_time=campaign["create_time"],
+                                rf_campaign_type=campaign[
+                                    "rf_campaign_type"] if 'rf_campaign_type' in campaign else None,
+                                objective_type=campaign["objective_type"] if 'objective_type' in campaign else None,
+                                secondary_status=campaign[
+                                    "secondary_status"] if 'secondary_status' in campaign else None,
+                                roas_bid=campaign["roas_bid"] if 'roas_bid' in campaign else None,
+                                app_promotion_type=campaign[
+                                    "app_promotion_type"] if 'app_promotion_type' in campaign else None
+                            ))
+                        else:
+                            create_campaign_data.append(Campaigns(
+                                advertiser_id=advertiser,
+                                is_new_structure=campaign["is_new_structure"],
+                                modify_time=campaign["modify_time"] if 'modify_time' in campaign else None,
+                                campaign_id=campaign["campaign_id"],
+                                operation_status=campaign[
+                                    "operation_status"] if 'operation_status' in campaign else None,
+                                objective=campaign["objective"] if 'objective' in campaign else None,
+                                is_smart_performance_campaign=campaign[
+                                    "is_smart_performance_campaign"] if 'is_smart_performance_campaign' in campaign else None,
+                                budget_mode=campaign["budget_mode"] if 'budget_mode' in campaign else None,
+                                deep_bid_type=campaign["deep_bid_type"] if 'deep_bid_type' in campaign else None,
+                                budget=campaign["budget"] if 'budget' in campaign else None,
+                                campaign_name=campaign["campaign_name"] if 'campaign_name' in campaign else None,
+                                campaign_type=campaign["campaign_type"] if 'campaign_type' in campaign else None,
+                                create_time=campaign["create_time"],
+                                rf_campaign_type=campaign[
+                                    "rf_campaign_type"] if 'rf_campaign_type' in campaign else None,
+                                objective_type=campaign["objective_type"] if 'objective_type' in campaign else None,
+                                secondary_status=campaign[
+                                    "secondary_status"] if 'secondary_status' in campaign else None,
+                                roas_bid=campaign["roas_bid"] if 'roas_bid' in campaign else None,
+                                app_promotion_type=campaign[
+                                    "app_promotion_type"] if 'app_promotion_type' in campaign else None
+                            ))
+            if update_campaign_data:
+                Campaigns.objects.bulk_update(update_campaign_data,
+                                              ['advertiser_id', 'is_new_structure', 'modify_time', 'campaign_id',
+                                               'operation_status', 'objective', 'is_smart_performance_campaign',
+                                               'budget_mode', 'budget', 'campaign_name', 'campaign_type', 'create_time',
+                                               'rf_campaign_type', 'objective_type', 'secondary_status', 'roas_bid',
+                                               'app_promotion_type'], batch_size=1000)
+            if create_campaign_data:
+                Campaigns.objects.bulk_create(create_campaign_data, batch_size=1000)
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
@@ -474,159 +530,177 @@ class ManualSchedulerView(APIView):
         try:
             # Args in JSON format
             path = "/campaign/get/"
-
             # Args in JSON format
-            my_args = "{\"advertiser_id\": \"%s\"}" % (advertiser_id)
+            my_args = "{\"advertiser_id\": \"%s\" , \"page_size\":\"%s\"""}" % (advertiser_id, '1000')
             reports = tiktok_get(my_args, path, access_token)
             response["data"] = reports['data']['list']
+            total_page = reports['data']['page_info']['total_page']
+            page = reports['data']['page_info']['page']
+            if total_page != page:
+                for i in range(2, total_page + 1):
+                    try:
+                        page = i
+                        my_args = "{\"advertiser_id\": \"%s\", \"page\":\"%s\", \"page_size\":\"%s\"}" % (
+                            advertiser_id, page, '1000')
+                        reports = tiktok_get(my_args, path, access_token)
+                        response["data"] = response["data"] + reports['data']['list']
+                    except Exception as e:
+                        print("error", e)
+                        continue
             response["success"] = True
+
         except Exception as e:
             LogHelper.efail(e)
             response["success"] = False
             response["message"] = str(e)
         return response
 
-    def convert_datetime_timezone(tz):
-        now_utc = datetime.now(timezone("UTC"))
-        now_timezone = now_utc.astimezone(timezone(tz))
-        dt = now_timezone.strftime("%Y-%m-%d")
-        return dt
 
-    def user_campaning_list(request):
-        camping_list = list(Campaigns.objects.values_list("campaign_id", flat=True).all())
-        # camping_list = [i.campaign_id for i in data]
-        return camping_list
+def convert_datetime_timezone(tz):
+    now_utc = datetime.now(timezone("UTC"))
+    now_timezone = now_utc.astimezone(timezone(tz))
+    dt = now_timezone.strftime("%Y-%m-%d")
+    return dt
 
-    def get_tonic_report(request):
-        response = {}
-        try:
-            token = ManualSchedulerView.get_tonic_api_token(request)
-            # token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkbG4iOiJGVWZXcU1Sd3pRX2dPdGR3M1I2QlhGWkZ4NENIY3NhaTk0RFVrV2EzVXpqVDVpTWFkRWN3UzlWbTFjNEFUMmJVejVhR0NqcWd4bFFaOV9fY0FoS1V5ZEc1S19vU0dtMm5wcTRRZWFMX0o3blNKVVRPaTNFVXF6ZU9GVEZHZXc0NUVRSGhId2FwSlI1M3NRODdWQmNPNTdKVEdqcTQ5QUlBcm9ERWR1OGQyck0iLCJleHAiOjE2Njg3MTA2MTl9.pt8mT4Uwzuqj7qRYP6R7WYqaY_ImcpGYBNSqmX-l8S0'
-            if "today" in request.GET:
-                timezone_date = request.GET.get('today')
+
+def user_campaning_list(request):
+    camping_list = list(Campaigns.objects.values_list("campaign_id", flat=True).all())
+    # camping_list = [i.campaign_id for i in data]
+    return camping_list
+
+
+def get_tonic_report(request):
+    response = {}
+    try:
+        token = ManualSchedulerView.get_tonic_api_token(request)
+        # token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkbG4iOiJGVWZXcU1Sd3pRX2dPdGR3M1I2QlhGWkZ4NENIY3NhaTk0RFVrV2EzVXpqVDVpTWFkRWN3UzlWbTFjNEFUMmJVejVhR0NqcWd4bFFaOV9fY0FoS1V5ZEc1S19vU0dtMm5wcTRRZWFMX0o3blNKVVRPaTNFVXF6ZU9GVEZHZXc0NUVRSGhId2FwSlI1M3NRODdWQmNPNTdKVEdqcTQ5QUlBcm9ERWR1OGQyck0iLCJleHAiOjE2Njg3MTA2MTl9.pt8mT4Uwzuqj7qRYP6R7WYqaY_ImcpGYBNSqmX-l8S0'
+        if "today" in request.GET:
+            timezone_date = request.GET.get('today')
+        else:
+            timezone_date = datetime.now().date()
+        tonic_data = get_tonic_daily_report(timezone_date, token)
+        campign_list = ManualSchedulerView.user_campaning_list(request)
+        set_campaign_id = ManualSchedulerView.update_tonic_campaign_id(request, campign_list, tonic_data)
+
+        create_campaign_reports, update_campaign_reports = ManualSchedulerView.save_campign_resport(request,
+                                                                                                    set_campaign_id)
+        if create_campaign_reports:
+            CampaignReports.objects.bulk_create(create_campaign_reports)
+        if update_campaign_reports:
+            CampaignReports.objects.bulk_update(create_campaign_reports, ['revenue'])
+        advertisers_list = ManualSchedulerView.get_advertisers_list(request)
+        advertisers_campaign_objects = {
+            advertiser_id: ManualSchedulerView.get_advertiser_campaign_list(request, advertiser_id) for
+            advertiser_id in
+            advertisers_list}
+        advertiser_revenue_list = {
+            i: ManualSchedulerView.get_advertiser_revenue(request, advertisers_campaign_objects[i])
+            for i in advertisers_campaign_objects}
+        advertiser_reveune = ManualSchedulerView.set_advertiser_reveune(request, advertiser_revenue_list)
+        response["success"] = True
+        return Response(response, status=status.HTTP_200_OK)
+    except Exception as e:
+        LogHelper.efail(e)
+        response["success"] = False
+        response["message"] = str(e)
+        return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+
+def get_tonic_api_token(request):
+    data = get_access_token().json()
+    return data['token']
+
+
+def update_tonic_campaign_id(self, campaign_list, tonic_data):
+    result = {}
+    try:
+        for campaign in campaign_list:
+            revenue = 0.0
+            for i in tonic_data:
+                if i['tonic_campaign_id'] == campaign:
+                    revenue = round(revenue + float(i['revenue']), 2)
+                    i['revenue'] = revenue
+                    i['campaign_id'] = i['tonic_campaign_id']
+
+                    if campaign not in result:
+                        result[campaign] = i
+                    else:
+                        result[campaign]['revenue'] = revenue
+    except Exception as e:
+        print(e)
+    return result
+
+
+def save_campign_resport(self, set_campaign_id):
+    create_campaign_reports = []
+    update_campaign_reports = []
+    for i in set_campaign_id:
+        data = set_campaign_id[i]
+        campaign = Campaigns.objects.get(campaign_id=i)
+        campaign_reports = CampaignReports.objects.filter(campaign_id=campaign).first()
+        if campaign_reports is None:
+            create_campaign_reports.append(CampaignReports(campaign_id=campaign, report_date=data['report_date'],
+                                                           revenue=data['revenue'],
+                                                           tonic_campaign_id=data['tonic_campaign_id'],
+                                                           tonic_campaign_name=data['tonic_campaign_name'],
+                                                           clicks=data['clicks'],
+                                                           keyword=data['keyword'], adtitle=data['adtitle'],
+                                                           device=data['device']))
+        else:
+            update_campaign_reports.append(
+                CampaignReports(id=campaign_reports.id, campaign_id=campaign, report_date=data['report_date'],
+                                revenue=data['revenue'],
+                                tonic_campaign_id=data['tonic_campaign_id'],
+                                tonic_campaign_name=data['tonic_campaign_name'],
+                                clicks=data['clicks'],
+                                keyword=data['keyword'], adtitle=data['adtitle'],
+                                device=data['device']))
+    return create_campaign_reports, update_campaign_reports
+
+
+def get_advertisers_list(self):
+    data_list = list(Advertisers.objects.values_list("advertiser_id", flat=True).all())
+    # data_list = [i.advertiser_id for i in data]
+    return data_list
+
+
+def get_advertiser_revenue(self, campaign_list):
+    result = {}
+    if campaign_list:
+        data = CampaignReports.objects.filter(campaign_id__in=campaign_list)
+        for i in data:
+            date = i.report_date.strftime("%Y-%m-%d")
+            if date in result:
+                result[date] = round(result[date] + float(i.revenue), 2)
             else:
-                timezone_date = datetime.now().date()
-            tonic_data = get_tonic_daily_report(timezone_date, token)
-            campign_list = ManualSchedulerView.user_campaning_list(request)
-            set_campaign_id = ManualSchedulerView.update_tonic_campaign_id(request, campign_list, tonic_data)
-
-            create_campaign_reports, update_campaign_reports = ManualSchedulerView.save_campign_resport(request,
-                                                                                                  set_campaign_id)
-            if create_campaign_reports:
-                CampaignReports.objects.bulk_create(create_campaign_reports)
-            if update_campaign_reports:
-                CampaignReports.objects.bulk_update(create_campaign_reports, ['revenue'])
-            advertisers_list = ManualSchedulerView.get_advertisers_list(request)
-            advertisers_campaign_objects = {
-                advertiser_id: ManualSchedulerView.get_advertiser_campaign_list(request, advertiser_id) for advertiser_id in
-                advertisers_list}
-            advertiser_revenue_list = {i: ManualSchedulerView.get_advertiser_revenue(request, advertisers_campaign_objects[i])
-                                       for i in advertisers_campaign_objects}
-            advertiser_reveune = ManualSchedulerView.set_advertiser_reveune(request, advertiser_revenue_list)
-            # print(advertiser_reveune)
-            response["success"] = True
-            return Response(response, status=status.HTTP_200_OK)
-        except Exception as e:
-            LogHelper.efail(e)
-            response["success"] = False
-            response["message"] = str(e)
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
-
-    def get_tonic_api_token(request):
-        data = get_access_token().json()
-        return data['token']
-
-    def update_tonic_campaign_id(self, campaign_list, tonic_data):
-        result = {}
-        try:
-            for campaign in campaign_list:
-                revenue = 0.0
-                for i in tonic_data:
-                    if i['tonic_campaign_id'] == campaign:
-                        revenue = round(revenue + float(i['revenue']), 2)
-                        i['revenue'] = revenue
-                        i['campaign_id'] = i['tonic_campaign_id']
-
-                        if campaign not in result:
-                            result[campaign] = i
-                        else:
-                            result[campaign]['revenue'] = revenue
-        except Exception as e:
-            print(e)
-        return result
-
-    def save_campign_resport(self, set_campaign_id):
-        create_campaign_reports = []
-        update_campaign_reports = []
-        for i in set_campaign_id:
-            data = set_campaign_id[i]
-            campaign = Campaigns.objects.get(campaign_id=i)
-            campaign_reports = CampaignReports.objects.filter(campaign_id=campaign).first()
-            if campaign_reports is None:
-                create_campaign_reports.append(CampaignReports(campaign_id=campaign, report_date=data['report_date'],
-                                                               revenue=data['revenue'],
-                                                               tonic_campaign_id=data['tonic_campaign_id'],
-                                                               tonic_campaign_name=data['tonic_campaign_name'],
-                                                               clicks=data['clicks'],
-                                                               keyword=data['keyword'], adtitle=data['adtitle'],
-                                                               device=data['device']))
-            else:
-                update_campaign_reports.append(
-                    CampaignReports(id=campaign_reports.id, campaign_id=campaign, report_date=data['report_date'],
-                                    revenue=data['revenue'],
-                                    tonic_campaign_id=data['tonic_campaign_id'],
-                                    tonic_campaign_name=data['tonic_campaign_name'],
-                                    clicks=data['clicks'],
-                                    keyword=data['keyword'], adtitle=data['adtitle'],
-                                    device=data['device']))
-        return create_campaign_reports, update_campaign_reports
-
-    def get_advertisers_list(self):
-        data_list = list(Advertisers.objects.values_list("advertiser_id", flat=True).all())
-        # data_list = [i.advertiser_id for i in data]
-        return data_list
-
-    def get_advertiser_revenue(self, campaign_list):
-        result = {}
-        if campaign_list:
-            data = CampaignReports.objects.filter(campaign_id__in=campaign_list)
-            for i in data:
-                date = i.report_date.strftime("%Y-%m-%d")
-                if date in result:
-                    result[date] = round(result[date] + float(i.revenue), 2)
-                else:
-                    result[date] = i.revenue
-                    # revenue = round(revenue + float(i.revenue), 2)
-        return result
-
-    def get_advertiser_campaign_list(self, advertiser_id):
-        data_list = list(Campaigns.objects.values_list("campaign_id", flat=True).filter(advertiser_id=advertiser_id))
-        # data_list = [i.campaign_id for i in data]
-        return data_list
-
-    def set_advertiser_reveune(self, advertiser_revenue_list):
-        count = 0
-        for advertiser in advertiser_revenue_list:
-            date_list = advertiser_revenue_list[advertiser]
-            for date in date_list:
-                try:
-                    revenue = date_list[date]
-                    reports = Reports.objects.filter(advertiser_id=advertiser, report_date=date)
-                    if reports:
-                        try:
-                            for i in reports:
-                                # print(advertiser, date)
-                                # print(i.advertiser_id.advertiser_id, i.report_date)
-                                # print('-------------------')
-                                i.revenue = revenue
-                                i.save()
-                                count = count + 1
-                        except Exception as e:
-                            continue
-                except Exception as e:
-                    print(e)
-                    continue
-        return count
+                result[date] = i.revenue
+                # revenue = round(revenue + float(i.revenue), 2)
+    return result
 
 
+def get_advertiser_campaign_list(self, advertiser_id):
+    data_list = list(Campaigns.objects.values_list("campaign_id", flat=True).filter(advertiser_id=advertiser_id))
+    # data_list = [i.campaign_id for i in data]
+    return data_list
 
+
+def set_advertiser_reveune(self, advertiser_revenue_list):
+    count = 0
+    for advertiser in advertiser_revenue_list:
+        date_list = advertiser_revenue_list[advertiser]
+        for date in date_list:
+            try:
+                revenue = date_list[date]
+                reports = Reports.objects.filter(advertiser_id=advertiser, report_date=date)
+                if reports:
+                    try:
+                        for i in reports:
+                            i.revenue = revenue
+                            i.save()
+                            count = count + 1
+                    except Exception as e:
+                        continue
+            except Exception as e:
+                print(e)
+                continue
+    return count
