@@ -58,7 +58,7 @@ class AdvertiserView(APIView):
                 query_filter &= Q(name__icontains=name)
             advertisers = Advertisers.objects.filter(query_filter).annotate(
                 total_cost=Sum('reports__spend'), clicks=Sum('reports__clicks'),
-                conversions=Sum('reports__conversion'), impressions=Sum('reports__impressions')).order_by("id")
+                conversions=Sum('reports__conversion'), impressions=Sum('reports__impressions'), revenue=Sum('reports__revenue')).order_by("id")
             for advertiser in advertisers:
                 advertiser.status = AdvertiserCalculateView.get_status(request, advertiser)
                 advertiser.conversion_rate = AdvertiserCalculateView.get_conversion_rate(request, advertiser)
@@ -67,6 +67,7 @@ class AdvertiserView(APIView):
                 advertiser.cpm = AdvertiserCalculateView.get_cpm(request, advertiser)
                 advertiser.cpc = AdvertiserCalculateView.get_cpc(request, advertiser)
                 advertiser.cpa = AdvertiserCalculateView.get_cpa(request, advertiser)
+                advertiser.revenue = AdvertiserCalculateView.get_revenue(request, advertiser)
                 advertiser_list.append(AdvertiserSerializer(advertiser).data)
             new_sorted_list = sorted(advertiser_list, key=lambda d: d[order_by], reverse=sort_by)
             paginator = CustomPagination()

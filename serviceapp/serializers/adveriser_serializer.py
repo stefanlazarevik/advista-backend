@@ -14,11 +14,12 @@ class AdvertiserSerializer(serializers.ModelSerializer):
     cpc = serializers.FloatField()
     ctr = serializers.FloatField()
     cpa = serializers.FloatField()
+    revenue = serializers.FloatField()
     impressions = serializers.IntegerField()
 
     class Meta:
         model = Advertisers
-        fields = ('id', 'advertiser_id', 'name', 'timezone', 'display_timezone', 'status', 'total_cost', 'clicks', 'conversion_rate', 'conversions', 'cpm', 'cpc', 'ctr', 'cpa', 'impressions', 'company', 'status_code')
+        fields = ('id', 'advertiser_id', 'name', 'timezone', 'display_timezone', 'status', 'total_cost', 'clicks', 'conversion_rate', 'conversions', 'cpm', 'cpc', 'ctr', 'cpa', 'impressions', 'company', 'status_code', 'revenue')
 
 
 class AdvertiserCSVSerializer(serializers.ModelSerializer):

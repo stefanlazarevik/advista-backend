@@ -23,16 +23,18 @@ class ReportView(APIView):
         try:
             start_date = request.GET.get('start_date')
             end_date = request.GET.get('end_date')
-            reports = Reports.objects.filter(report_date__gte=start_date, report_date__lte=end_date).aggregate(Sum('spend'), Sum('clicks'),Sum('conversion'), Sum('impressions'))
+            reports = Reports.objects.filter(report_date__gte=start_date, report_date__lte=end_date).aggregate(Sum('spend'), Sum('clicks'),Sum('conversion'), Sum('impressions'), Sum('revenue'))
             total_conversions = reports['conversion__sum'] if reports['conversion__sum'] else 0
             total_cost = reports['spend__sum'] if reports['spend__sum'] else 0.0
             total_clicks = reports['clicks__sum'] if reports['clicks__sum'] else 0
             total_impressions = reports['impressions__sum'] if reports['impressions__sum'] else 0
+            total_revenue = reports['revenue__sum'] if reports['revenue__sum'] else 0
             report = {
                 "conversions": total_conversions,
                 "total_cost": round(total_cost, 2),
                 "clicks": total_clicks,
-                "impressions": total_impressions
+                "impressions": total_impressions,
+                "revenue": round(total_revenue, 2)
             }
             if report['clicks'] != 0:
                 report['conversion_rate'] = round(report['conversions']/(report['clicks']/100), 2)
@@ -58,7 +60,7 @@ class ReportView(APIView):
             # get Activity report
             daily_reports = Reports.objects.filter(report_date__lte=end_date, report_date__gte=start_date).values(
                 'report_date').annotate(Count('advertiser_id', distinct=True), Sum('spend'), Sum('clicks'),
-                                        Sum('conversion'), Sum('impressions')).order_by('-report_date')
+                                        Sum('conversion'), Sum('impressions'), Sum('revenue')).order_by('-report_date')
             report_serializer = DailyReportSerializer(daily_reports, many=True)
             response["data"] = {
                 "total_repots": report,

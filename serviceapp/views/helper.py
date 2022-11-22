@@ -96,6 +96,12 @@ class AdvertiserCalculateView(generic.DetailView):
         except:
             return 0
 
+    def get_revenue(request, advertiser):
+        try:
+            return round(advertiser.revenue, 2)
+        except:
+            return 0
+
     def get_conversion_rate(request, advertiser):
         try:
             return round(advertiser.conversions/(advertiser.clicks/100), 2)
