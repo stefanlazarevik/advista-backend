@@ -577,7 +577,7 @@ class ManualSchedulerView(APIView):
             if "today" in request.GET:
                 timezone_date = request.GET.get('today')
             else:
-                timezone_date = datetime.now().date()
+                timezone_date = ManualSchedulerView.convert_datetime_timezone("America/Los_Angeles")
             tonic_data = get_tonic_daily_report(timezone_date, token)
             campign_list = ManualSchedulerView.user_campaning_list(request)
             set_campaign_id = ManualSchedulerView.update_tonic_campaign_id(request, campign_list, tonic_data)
