@@ -25,17 +25,14 @@ class ManualSchedulerView(APIView):
             print("scheduler start-----------")
             advertisers = ManualSchedulerView.get_daily_advertisers(request)
             print("advertisers end-----------")
-            # reports = ManualSchedulerView.get_daily_report(request)
+            reports = ManualSchedulerView.get_daily_report(request)
             print("reports end-----------")
-            # country_reports = ManualSchedulerView.get_daily_country_report(request)
+            country_reports = ManualSchedulerView.get_daily_country_report(request)
             print("country_reports end-----------")
-            # partners = ManualSchedulerView.get_daily_partners(request)
+            partners = ManualSchedulerView.get_daily_partners(request)
             print("partners end-----------")
             campaigns = ManualSchedulerView.get_daily_campaigns(request)
             print("campaigns end-----------")
-            LogHelper.ex_time_init("start Tonic")
-            tonic_reports = ManualSchedulerView.get_tonic_report(request)
-            LogHelper.ex_time()
             print("scheduler end-----------")
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
@@ -555,152 +552,9 @@ class ManualSchedulerView(APIView):
             response["message"] = str(e)
         return response
 
-
     def convert_datetime_timezone(tz):
         now_utc = datetime.now(timezone("UTC"))
         now_timezone = now_utc.astimezone(timezone(tz))
         dt = now_timezone.strftime("%Y-%m-%d")
+        print(dt)
         return dt
-
-
-    def user_campaning_list(request):
-        camping_list = list(Campaigns.objects.values_list("campaign_id", flat=True).all())
-        # camping_list = [i.campaign_id for i in data]
-        return camping_list
-
-
-    def get_tonic_report(request):
-        response = {}
-        try:
-            token = ManualSchedulerView.get_tonic_api_token(request)
-            # token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJkbG4iOiJGVWZXcU1Sd3pRX2dPdGR3M1I2QlhGWkZ4NENIY3NhaTk0RFVrV2EzVXpqVDVpTWFkRWN3UzlWbTFjNEFUMmJVejVhR0NqcWd4bFFaOV9fY0FoS1V5ZEc1S19vU0dtMm5wcTRRZWFMX0o3blNKVVRPaTNFVXF6ZU9GVEZHZXc0NUVRSGhId2FwSlI1M3NRODdWQmNPNTdKVEdqcTQ5QUlBcm9ERWR1OGQyck0iLCJleHAiOjE2Njg3MTA2MTl9.pt8mT4Uwzuqj7qRYP6R7WYqaY_ImcpGYBNSqmX-l8S0'
-            if "today" in request.GET:
-                timezone_date = request.GET.get('today')
-            else:
-                timezone_date = ManualSchedulerView.convert_datetime_timezone("America/Los_Angeles")
-            tonic_data = get_tonic_daily_report(timezone_date, token)
-            campign_list = ManualSchedulerView.user_campaning_list(request)
-            set_campaign_id = ManualSchedulerView.update_tonic_campaign_id(request, campign_list, tonic_data)
-
-            create_campaign_reports, update_campaign_reports = ManualSchedulerView.save_campign_resport(request,
-                                                                                                        set_campaign_id)
-            if create_campaign_reports:
-                CampaignReports.objects.bulk_create(create_campaign_reports)
-            if update_campaign_reports:
-                CampaignReports.objects.bulk_update(create_campaign_reports, ['revenue'])
-            advertisers_list = ManualSchedulerView.get_advertisers_list(request)
-            advertisers_campaign_objects = {
-                advertiser_id: ManualSchedulerView.get_advertiser_campaign_list(request, advertiser_id) for
-                advertiser_id in
-                advertisers_list}
-            advertiser_revenue_list = {
-                i: ManualSchedulerView.get_advertiser_revenue(request, advertisers_campaign_objects[i])
-                for i in advertisers_campaign_objects}
-            advertiser_reveune = ManualSchedulerView.set_advertiser_reveune(request, advertiser_revenue_list)
-            response["success"] = True
-            return Response(response, status=status.HTTP_200_OK)
-        except Exception as e:
-            LogHelper.efail(e)
-            response["success"] = False
-            response["message"] = str(e)
-            return Response(response, status=status.HTTP_400_BAD_REQUEST)
-
-
-    def get_tonic_api_token(request):
-        data = get_access_token().json()
-        return data['token']
-
-
-    def update_tonic_campaign_id(self, campaign_list, tonic_data):
-        result = {}
-        try:
-            for campaign in campaign_list:
-                revenue = 0.0
-                for i in tonic_data:
-                    if i['tonic_campaign_id'] == campaign:
-                        revenue = round(revenue + float(i['revenue']), 2)
-                        i['revenue'] = revenue
-                        i['campaign_id'] = i['tonic_campaign_id']
-
-                        if campaign not in result:
-                            result[campaign] = i
-                        else:
-                            result[campaign]['revenue'] = revenue
-        except Exception as e:
-            print(e)
-        return result
-
-
-    def save_campign_resport(self, set_campaign_id):
-        create_campaign_reports = []
-        update_campaign_reports = []
-        for i in set_campaign_id:
-            data = set_campaign_id[i]
-            campaign = Campaigns.objects.get(campaign_id=i)
-            campaign_reports = CampaignReports.objects.filter(campaign_id=campaign).first()
-            if campaign_reports is None:
-                create_campaign_reports.append(CampaignReports(campaign_id=campaign, report_date=data['report_date'],
-                                                               revenue=data['revenue'],
-                                                               tonic_campaign_id=data['tonic_campaign_id'],
-                                                               tonic_campaign_name=data['tonic_campaign_name'],
-                                                               clicks=data['clicks'],
-                                                               keyword=data['keyword'], adtitle=data['adtitle'],
-                                                               device=data['device']))
-            else:
-                update_campaign_reports.append(
-                    CampaignReports(id=campaign_reports.id, campaign_id=campaign, report_date=data['report_date'],
-                                    revenue=data['revenue'],
-                                    tonic_campaign_id=data['tonic_campaign_id'],
-                                    tonic_campaign_name=data['tonic_campaign_name'],
-                                    clicks=data['clicks'],
-                                    keyword=data['keyword'], adtitle=data['adtitle'],
-                                    device=data['device']))
-        return create_campaign_reports, update_campaign_reports
-
-
-    def get_advertisers_list(self):
-        data_list = list(Advertisers.objects.values_list("advertiser_id", flat=True).all())
-        # data_list = [i.advertiser_id for i in data]
-        return data_list
-
-
-    def get_advertiser_revenue(self, campaign_list):
-        result = {}
-        if campaign_list:
-            data = CampaignReports.objects.filter(campaign_id__in=campaign_list)
-            for i in data:
-                date = i.report_date.strftime("%Y-%m-%d")
-                if date in result:
-                    result[date] = round(result[date] + float(i.revenue), 2)
-                else:
-                    result[date] = i.revenue
-                    # revenue = round(revenue + float(i.revenue), 2)
-        return result
-
-
-    def get_advertiser_campaign_list(self, advertiser_id):
-        data_list = list(Campaigns.objects.values_list("campaign_id", flat=True).filter(advertiser_id=advertiser_id))
-        # data_list = [i.campaign_id for i in data]
-        return data_list
-
-
-    def set_advertiser_reveune(self, advertiser_revenue_list):
-        count = 0
-        for advertiser in advertiser_revenue_list:
-            date_list = advertiser_revenue_list[advertiser]
-            for date in date_list:
-                try:
-                    revenue = date_list[date]
-                    reports = Reports.objects.filter(advertiser_id=advertiser, report_date=date)
-                    if reports:
-                        try:
-                            for i in reports:
-                                i.revenue = revenue
-                                i.save()
-                                count = count + 1
-                        except Exception as e:
-                            continue
-                except Exception as e:
-                    print(e)
-                    continue
-        return count

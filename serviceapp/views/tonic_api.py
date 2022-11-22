@@ -36,18 +36,4 @@ def get_tonic_daily_report(timezone_date, access_token):
         "Content-Type": 'application/json',
     }
     rsp = requests.get(path, params=params, headers=headers)
-    for i in rsp.json():
-        try:
-            tonic_result.append({
-                'report_date': i['date'],
-                'revenue': i['revenueUsd'],
-                'tonic_campaign_id': i['subid1'],
-                'tonic_campaign_name': i['campaign_name'],
-                'clicks': i['clicks'],
-                'keyword': i['keyword'],
-                'adtitle': i['adtitle'],
-                'device': i['device'],
-            })
-        except Exception as e:
-            print(e)
-    return tonic_result
+    return rsp.json()
