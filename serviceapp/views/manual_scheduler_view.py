@@ -1,4 +1,6 @@
 import json
+import math
+
 from pytz import timezone
 import pycountry
 from django.contrib.auth.decorators import login_required
@@ -138,59 +140,67 @@ class ManualSchedulerView(APIView):
     def update_existing_advertisers(request, advertiser_ids, access_token):
         response = {}
         try:
+            offset = 0
+            limit = 100
+            total_advertiser_ids = len(advertiser_ids)
+            total_page = math.ceil(total_advertiser_ids / limit)
             advertiser_list = []
             advertiser_data = {}
             # Args in JSON format
             path = "/advertiser/info/"
-            my_args = "{\"advertiser_ids\": %s}" % (json.dumps(advertiser_ids))
-            advertisers = tiktok_get(my_args, path, access_token)
-            for advertiser in advertisers['data']['list']:
-                advertiser_dict = {
-                    "contacter": advertiser['contacter'],
-                    "balance": advertiser['balance'],
-                    "rejection_reason": advertiser['rejection_reason'],
-                    "language": advertiser['language'],
-                    "license_province": advertiser['license_province'],
-                    "role": advertiser['role'],
-                    "timezone": advertiser['timezone'],
-                    "create_time": advertiser['create_time'],
-                    "address": advertiser['address'],
-                    "company": advertiser['company'],
-                    "advertiser_account_type": advertiser['advertiser_account_type'],
-                    "license_url": advertiser['license_url'],
-                    "license_no": advertiser['license_no'],
-                    "description": advertiser['description'],
-                    "owner_bc_id": advertiser['owner_bc_id'],
-                    "brand": advertiser['brand'],
-                    "country": advertiser['country'],
-                    "industry": advertiser['industry'],
-                    "promotion_center_province": advertiser['promotion_center_province'],
-                    "license_city": advertiser['license_city'],
-                    "promotion_center_city": advertiser['promotion_center_city'],
-                    "status": advertiser['status'],
-                    "cellphone_number": advertiser['cellphone_number'],
-                    "email": advertiser['email'],
-                    "advertiser_id": advertiser['advertiser_id'],
-                    "display_timezone": advertiser['display_timezone'],
-                    "telephone_number": advertiser['telephone_number'],
-                    "currency": advertiser['currency'],
-                    "promotion_area": advertiser['promotion_area'],
-                    "name": advertiser['name']
-                }
-                if advertiser['status'] == "STATUS_ENABLE":
-                    advertiser_dict['status_code'] = "active"
-                elif advertiser['status'] == "STATUS_DISABLE":
-                    advertiser_dict['status_code'] = "disabled"
-                elif advertiser['status'] == "STATUS_PENDING_VERIFIED":
-                    advertiser_dict['status_code'] = "verification"
-                elif advertiser['status'] == "STATUS_LIMIT":
-                    advertiser_dict['status_code'] = "limit"
-                elif advertiser['status'] in ["STATUS_CONFIRM_FAIL", "STATUS_CONFIRM_FAIL_END",
-                                              "STATUS_CONFIRM_MODIFY_FAIL"]:
-                    advertiser_dict['status_code'] = "failed"
-                else:
-                    advertiser_dict['status_code'] = "review"
-                advertiser_data[advertiser['advertiser_id']] = advertiser_dict
+            while total_page:
+                my_args = "{\"advertiser_ids\": %s}" % (json.dumps(advertiser_ids[offset:limit]))
+                advertisers = tiktok_get(my_args, path, access_token)
+                for advertiser in advertisers['data']['list']:
+                    advertiser_dict = {
+                        "contacter": advertiser['contacter'],
+                        "balance": advertiser['balance'],
+                        "rejection_reason": advertiser['rejection_reason'],
+                        "language": advertiser['language'],
+                        "license_province": advertiser['license_province'],
+                        "role": advertiser['role'],
+                        "timezone": advertiser['timezone'],
+                        "create_time": advertiser['create_time'],
+                        "address": advertiser['address'],
+                        "company": advertiser['company'],
+                        "advertiser_account_type": advertiser['advertiser_account_type'],
+                        "license_url": advertiser['license_url'],
+                        "license_no": advertiser['license_no'],
+                        "description": advertiser['description'],
+                        "owner_bc_id": advertiser['owner_bc_id'],
+                        "brand": advertiser['brand'],
+                        "country": advertiser['country'],
+                        "industry": advertiser['industry'],
+                        "promotion_center_province": advertiser['promotion_center_province'],
+                        "license_city": advertiser['license_city'],
+                        "promotion_center_city": advertiser['promotion_center_city'],
+                        "status": advertiser['status'],
+                        "cellphone_number": advertiser['cellphone_number'],
+                        "email": advertiser['email'],
+                        "advertiser_id": advertiser['advertiser_id'],
+                        "display_timezone": advertiser['display_timezone'],
+                        "telephone_number": advertiser['telephone_number'],
+                        "currency": advertiser['currency'],
+                        "promotion_area": advertiser['promotion_area'],
+                        "name": advertiser['name']
+                    }
+                    if advertiser['status'] == "STATUS_ENABLE":
+                        advertiser_dict['status_code'] = "active"
+                    elif advertiser['status'] == "STATUS_DISABLE":
+                        advertiser_dict['status_code'] = "disabled"
+                    elif advertiser['status'] == "STATUS_PENDING_VERIFIED":
+                        advertiser_dict['status_code'] = "verification"
+                    elif advertiser['status'] == "STATUS_LIMIT":
+                        advertiser_dict['status_code'] = "limit"
+                    elif advertiser['status'] in ["STATUS_CONFIRM_FAIL", "STATUS_CONFIRM_FAIL_END",
+                                                  "STATUS_CONFIRM_MODIFY_FAIL"]:
+                        advertiser_dict['status_code'] = "failed"
+                    else:
+                        advertiser_dict['status_code'] = "review"
+                    advertiser_data[advertiser['advertiser_id']] = advertiser_dict
+                offset = limit
+                limit = offset + limit
+                total_page = total_page - 1
             existing_advertisers = Advertisers.objects.filter(advertiser_id__in=advertiser_ids)
             for advertiser in existing_advertisers:
                 for key in advertiser_data[advertiser.advertiser_id]:
