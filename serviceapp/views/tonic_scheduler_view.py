@@ -93,7 +93,7 @@ class TonicSchedulerView(APIView):
                 click = 0
                 for i in tonic_data:
                     if i['subid1'] == campaign:
-                        revenue = round(revenue + float(i['revenueUsd']), 2)
+                        revenue = revenue + float(i['revenueUsd'])
                         click = int(click) + int(i['clicks'])
                         i['revenueUsd'] = revenue
                         i['clicks'] = click

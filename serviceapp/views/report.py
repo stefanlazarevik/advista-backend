@@ -28,7 +28,7 @@ class ReportView(APIView):
             total_cost = reports['spend__sum'] if reports['spend__sum'] else 0.0
             total_clicks = reports['clicks__sum'] if reports['clicks__sum'] else 0
             total_impressions = reports['impressions__sum'] if reports['impressions__sum'] else 0
-            total_revenue = reports['revenue__sum'] if reports['revenue__sum'] else 0
+            total_revenue = reports['revenue__sum'] if reports['revenue__sum'] else 0.0
             report = {
                 "conversions": total_conversions,
                 "total_cost": round(total_cost, 2),
@@ -52,6 +52,11 @@ class ReportView(APIView):
                 report['cpa'] = round((report['total_cost'] / report['conversions']), 2)
             else:
                 report['cpa'] = 0
+            report["profit"] = round(total_revenue - total_cost, 2)
+            if total_cost > 0:
+                report["roi"] = round((report["profit"]/total_cost) * 100, 2)
+            else:
+                report["roi"] = 0.0
             # get country report
             country_reports = CountryReports.objects.filter(report_date__gte=start_date,
                                                             report_date__lte=end_date).values('country', 'country_code').annotate(

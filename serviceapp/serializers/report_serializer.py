@@ -27,6 +27,8 @@ class DailyReportSerializer(serializers.ModelSerializer):
     impressions = serializers.SerializerMethodField()
     products = serializers.SerializerMethodField()
     revenue = serializers.SerializerMethodField()
+    profit = serializers.SerializerMethodField()
+    roi = serializers.SerializerMethodField()
 
     def get_cost(self, report):
         try:
@@ -37,6 +39,18 @@ class DailyReportSerializer(serializers.ModelSerializer):
     def get_revenue(self, report):
         try:
             return round(report['revenue__sum'], 2)
+        except:
+            return 0.00
+
+    def get_profit(self, report):
+        try:
+            return round((report['revenue__sum'] - report['spend__sum']), 2)
+        except:
+            return 0.00
+
+    def get_roi(self, report):
+        try:
+            return round((report['revenue__sum'] - report['spend__sum'])/report['spend__sum'] * 100, 2)
         except:
             return 0.00
 
@@ -66,4 +80,4 @@ class DailyReportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Reports
-        fields = ('cost', 'conversions', 'clicks', 'impressions', 'products', 'report_date', 'revenue')
+        fields = ('cost', 'conversions', 'clicks', 'impressions', 'products', 'report_date', 'revenue', 'profit', 'roi')
