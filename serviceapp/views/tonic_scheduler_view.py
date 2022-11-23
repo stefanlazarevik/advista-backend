@@ -164,7 +164,6 @@ class TonicSchedulerView(APIView):
 
     def set_advertiser_reveune(self, advertiser_revenue_list, timezone_date):
         print("date--->", timezone_date)
-        print(advertiser_revenue_list)
         try:
             update_list = []
             for advertiser in advertiser_revenue_list:
