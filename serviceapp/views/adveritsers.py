@@ -68,6 +68,8 @@ class AdvertiserView(APIView):
                 advertiser.cpc = AdvertiserCalculateView.get_cpc(request, advertiser)
                 advertiser.cpa = AdvertiserCalculateView.get_cpa(request, advertiser)
                 advertiser.revenue = AdvertiserCalculateView.get_revenue(request, advertiser)
+                advertiser.profit = AdvertiserCalculateView.get_profit(request, advertiser)
+                advertiser.roi = AdvertiserCalculateView.get_roi(request, advertiser)
                 advertiser_list.append(AdvertiserSerializer(advertiser).data)
             new_sorted_list = sorted(advertiser_list, key=lambda d: d[order_by], reverse=sort_by)
             paginator = CustomPagination()

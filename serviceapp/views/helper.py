@@ -131,3 +131,15 @@ class AdvertiserCalculateView(generic.DetailView):
             return round((advertiser.total_cost / advertiser.conversions), 2)
         except:
             return 0.00
+
+    def get_profit(request, advertiser):
+        try:
+            return round((advertiser.revenue - advertiser.total_cost), 2)
+        except:
+            return 0.00
+
+    def get_roi(request, advertiser):
+        try:
+            return round((advertiser.revenue - advertiser.total_cost)/advertiser.total_cost * 100, 2)
+        except:
+            return 0.00
