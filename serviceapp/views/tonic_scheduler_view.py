@@ -128,7 +128,7 @@ class TonicSchedulerView(APIView):
                                                                keyword=data['keyword'], adtitle=data['adtitle'],
                                                                device=data['device']))
             else:
-                campaign_reports = CampaignReports.objects.filter(campaign_id=i).first()
+                campaign_reports = CampaignReports.objects.filter(campaign_id=i, report_date=report_date).first()
                 if campaign_reports:
                     update_campaign_reports.append(
                         CampaignReports(
