@@ -8,6 +8,10 @@ import io
 from datetime import datetime
 
 
+def get_vertical_details():
+    return {'name': "", 'category': "", 'domains': [], 'stats': [], 'source': [], 'url': []}
+
+
 class Users(AbstractUser):
     USERMODE_CHOICE = (
         ('1', 'Customer'),
@@ -186,5 +190,41 @@ class CampaignReports(models.Model):
 
     class Meta:
         db_table = "campaign_report"
+
+
+class MediaBuyer(models.Model):
+    media_buyer_id = models.CharField(max_length=100, unique=True)
+    email = models.CharField(max_length=100, null=True)
+    name = models.CharField(max_length=255, null=True)
+
+    class Meta:
+        db_table = "media_buyer"
+
+
+class MediaBuyerAdvertiser(models.Model):
+    media_buyer_id = models.ForeignKey(MediaBuyer, on_delete=models.SET_NULL, null=True, to_field='media_buyer_id',
+                                      db_column='media_buyer_id')
+    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id', db_column='advertiser_id')
+
+    class Meta:
+        db_table = "media_buyer_advertiser"
+
+
+class Vertical(models.Model):
+    vertical_id = models.CharField(max_length=100, unique=True)
+    details = models.JSONField(default=get_vertical_details)
+    created_time = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = "vertical"
+
+
+class VerticalAdvertiser(models.Model):
+    vertical_id = models.ForeignKey(Vertical, on_delete=models.SET_NULL, null=True, to_field='vertical_id',
+                                      db_column='vertical_id')
+    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id', db_column='advertiser_id')
+
+    class Meta:
+        db_table = "vertical_advertiser"
 
 
