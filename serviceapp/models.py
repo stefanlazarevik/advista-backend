@@ -32,7 +32,7 @@ class Users(AbstractUser):
                                     storage=FileSystemStorage())
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, related_name='user_created_by')
-    updated_by = models.ForeignKey("self", on_delete=models.SET_NULL, null=True,  related_name='user_updated_by')
+    updated_by = models.ForeignKey("self", on_delete=models.SET_NULL, null=True, related_name='user_updated_by')
     updated_at = models.DateTimeField(auto_now=True)
 
     # USERNAME_FIELD = 'email'
@@ -102,7 +102,8 @@ class Advertisers(models.Model):
 
 
 class Reports(models.Model):
-    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id', db_column='advertiser_id')
+    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id',
+                                      db_column='advertiser_id')
     real_time_conversion = models.IntegerField(null=True)
     cost_per_conversion = models.FloatField(null=True)
     cpm = models.FloatField(null=True)
@@ -125,7 +126,8 @@ class Reports(models.Model):
 
 
 class CountryReports(models.Model):
-    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id', db_column='advertiser_id')
+    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id',
+                                      db_column='advertiser_id')
     country_code = models.CharField(max_length=50, null=True)
     country = models.CharField(max_length=100, null=True)
     cost_per_conversion = models.FloatField(null=True)
@@ -154,7 +156,8 @@ class Partners(models.Model):
 
 class Campaigns(models.Model):
     campaign_id = models.CharField(max_length=100, unique=True)
-    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id', db_column='advertiser_id')
+    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id',
+                                      db_column='advertiser_id')
     is_new_structure = models.BooleanField(default=True)
     modify_time = models.DateTimeField(null=True)
     operation_status = models.CharField(max_length=255, null=True)
@@ -178,7 +181,7 @@ class Campaigns(models.Model):
 
 class CampaignReports(models.Model):
     campaign_id = models.ForeignKey(Campaigns, on_delete=models.SET_NULL, null=True, to_field='campaign_id',
-                                      db_column='campaign_id')
+                                    db_column='campaign_id')
     report_date = models.DateField()
     revenue = models.FloatField(default=0.0)
     tonic_campaign_id = models.CharField(max_length=100, null=True)
@@ -193,7 +196,8 @@ class CampaignReports(models.Model):
 
 
 class MediaBuyer(models.Model):
-    media_buyer_id = models.CharField(max_length=100, unique=True)
+    request_id = models.CharField(max_length=100, unique=True)
+    media_buyer_id = models.CharField(max_length=100)
     email = models.CharField(max_length=100, null=True)
     name = models.CharField(max_length=255, null=True)
 
@@ -202,9 +206,10 @@ class MediaBuyer(models.Model):
 
 
 class MediaBuyerAdvertiser(models.Model):
-    media_buyer_id = models.ForeignKey(MediaBuyer, on_delete=models.SET_NULL, null=True, to_field='media_buyer_id',
-                                      db_column='media_buyer_id')
-    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id', db_column='advertiser_id')
+    media_buyer_id = models.ForeignKey(MediaBuyer, on_delete=models.SET_NULL, null=True, to_field='request_id',
+                                       db_column='request_id')
+    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id',
+                                      db_column='advertiser_id')
 
     class Meta:
         db_table = "media_buyer_advertiser"
@@ -221,10 +226,9 @@ class Vertical(models.Model):
 
 class VerticalAdvertiser(models.Model):
     vertical_id = models.ForeignKey(Vertical, on_delete=models.SET_NULL, null=True, to_field='vertical_id',
-                                      db_column='vertical_id')
-    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id', db_column='advertiser_id')
+                                    db_column='vertical_id')
+    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id',
+                                      db_column='advertiser_id')
 
     class Meta:
         db_table = "vertical_advertiser"
-
-
