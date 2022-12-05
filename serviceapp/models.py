@@ -12,6 +12,10 @@ def get_vertical_details():
     return {'name': "", 'category': "", 'domains': [], 'stats': [], 'source': [], 'url': []}
 
 
+def get_domain_for():
+    return {'id': "", 'email': "", 'name': ""}
+
+
 class Users(AbstractUser):
     USERMODE_CHOICE = (
         ('1', 'Customer'),
@@ -231,3 +235,30 @@ class VerticalAdvertiser(models.Model):
 
     class Meta:
         db_table = "vertical_advertiser"
+
+
+class Domains(models.Model):
+    domain_id = models.CharField(max_length=100, unique=True)
+    domain_for = models.JSONField(default=get_domain_for)
+    partner_url = models.TextField(null=True)
+    source = models.CharField(max_length=100, null=True)
+    stats = models.CharField(max_length=100, null=True)
+    pixel_id = models.CharField(max_length=255, null=True)
+    created_time = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = "domains"
+
+
+class System1Revenue(models.Model):
+    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id', db_column='advertiser_id')
+    domain_id = models.ForeignKey(Domains, on_delete=models.SET_NULL, null=True, to_field='domain_id', db_column='domain_id')
+    report_date = models.DateField()
+    clicks = models.IntegerField()
+    revenue = models.FloatField(default=0.0)
+    revenue_per_click = models.FloatField(default=0.0)
+
+    class Meta:
+        db_table = "system1_revenue"
+
+
