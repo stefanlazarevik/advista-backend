@@ -196,8 +196,7 @@ class CampaignReports(models.Model):
 
 
 class MediaBuyer(models.Model):
-    request_id = models.CharField(max_length=100, unique=True)
-    media_buyer_id = models.CharField(max_length=100)
+    media_buyer_id = models.CharField(max_length=100, unique=True)
     email = models.CharField(max_length=100, null=True)
     name = models.CharField(max_length=255, null=True)
 
@@ -206,8 +205,8 @@ class MediaBuyer(models.Model):
 
 
 class MediaBuyerAdvertiser(models.Model):
-    media_buyer_id = models.ForeignKey(MediaBuyer, on_delete=models.SET_NULL, null=True, to_field='request_id',
-                                       db_column='request_id')
+    media_buyer_id = models.ForeignKey(MediaBuyer, on_delete=models.SET_NULL, null=True, to_field='media_buyer_id',
+                                       db_column='media_buyer_id')
     advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id',
                                       db_column='advertiser_id')
 

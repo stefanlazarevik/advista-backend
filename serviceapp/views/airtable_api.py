@@ -27,7 +27,7 @@ class AirtableView(APIView):
         media_buyer = AirtableView.get_airtable_media_buyer_data(request,
                                                                  timezone_date)  # Get media_buyer_data from airtable api.
         new_media_buyer_response = AirtableView.save_media_buyer_into_db(request, media_buyer)
-        if 'new_media_data' in new_media_buyer_response:
+        if 'new_media_buyer_data' in new_media_buyer_response:
             AirtableView.save_media_buyer_advertiser_into_db(request, new_media_buyer_response, media_buyer)
         print("-------------media_buyer end................")
         print("-------------verticals start................")
@@ -36,13 +36,13 @@ class AirtableView(APIView):
         if 'new_vertical_data' in new_vertical_response:
             AirtableView.save_vertical_advertiser_ids_into_db(request, new_vertical_response, vertical_data)
         print("-------------verticals end................")
-        print("-------------domain_data start................")
-        domain_data = AirtableView.get_get_airtable_domains_data(request)
-        print("-------------domain_data end................")
-        get_system1_revenue_using_domain = AirtableView.get_system1_campaign_revenue(request, domain_data)
-        if len(get_system1_revenue_using_domain) > 0:
-            AirtableView.save_revenue_into_reports_db(request, get_system1_revenue_using_domain)
-        print(get_system1_revenue_using_domain)
+        # print("-------------domain_data start................")
+        # domain_data = AirtableView.get_get_airtable_domains_data(request)
+        # print("-------------domain_data end................")
+        # get_system1_revenue_using_domain = AirtableView.get_system1_campaign_revenue(request, domain_data)
+        # if len(get_system1_revenue_using_domain) > 0:
+        #     AirtableView.save_revenue_into_reports_db(request, get_system1_revenue_using_domain)
+        # print(get_system1_revenue_using_domain)
 
         return Response(response, status=status.HTTP_200_OK)
 
@@ -76,65 +76,67 @@ class AirtableView(APIView):
 
     def get_airtable_media_buyer_data(self, date):
         media_buyer = {}
-        filterValue = "AND(NOT({{Account ID}}=''),DATESTR({{Created}})='{}')".format(date)
-        print(filterValue)
+        # filterValue = "AND(NOT({{Account ID}}=''),DATESTR({{Created}})='{}')".format(date)
+        filterValue = "AND(NOT({Account ID}=''),{BC}='PixelMind')"
         accounts_data = AirtableView.get_airtable_accounts(self, filterValue, Accounts_Links_Hub_BASE_ID)
         for i in accounts_data:
             data = i['fields']
-            id = i['id']
-            buyer = data['Requested by']['id'].strip()
+            id = data['Requested by']['id'].strip()
             account_id = data['Account ID'].strip() if data['Account ID'] else None
             if account_id:
-                result = {'request_id': i['id'], 'media_buyer_id': buyer,
-                          'email': data['Requested by']['email'].strip(),
-                          'name': data['Requested by']['name'].strip(), 'advertiser_id': account_id}
-                media_buyer[id] = result
+                if id in media_buyer:
+                    media_buyer[id]['advertiser_ids'].append(account_id)
+                else:
+                    result = {'media_buyer_id': id,
+                              'email': data['Requested by']['email'].strip(),
+                              'name': data['Requested by']['name'].strip(), 'advertiser_ids': [account_id]}
+                    media_buyer[id] = result
         return media_buyer
 
     def save_media_buyer_into_db(self, media_buyer):
         response = {}
         create_media_buyer = []
         update_media_buyer = []
-        requests_ids = [i['request_id'] for i in list(media_buyer.values())]
-        media_buyer_request_ids = MediaBuyer.objects.values_list('request_id', flat=True).filter(
-            request_id__in=requests_ids)
-        new_media_buyer = list(set(requests_ids).difference(media_buyer_request_ids))
-        exitance_media_buyer = list(set(requests_ids).intersection(media_buyer_request_ids))
-        for i in new_media_buyer:
+        requests_ids = [i for i in list(media_buyer.keys())]
+        media_buyer_ids = MediaBuyer.objects.values_list('media_buyer_id', flat=True).filter(
+            media_buyer_id__in=requests_ids)
+        new_media_buyer_ids = list(set(requests_ids).difference(media_buyer_ids))
+        existence_media_buyer = list(set(requests_ids).intersection(media_buyer_ids))
+        for i in new_media_buyer_ids:
             data = media_buyer[i]
             create_media_buyer.append(
-                MediaBuyer(request_id=data['request_id'], media_buyer_id=data['media_buyer_id'], email=data['email'],
+                MediaBuyer(media_buyer_id=data['media_buyer_id'], email=data['email'],
                            name=data['name']))
-        for i in exitance_media_buyer:
+        for i in existence_media_buyer:
             try:
                 data = media_buyer[i]
-                media_buyer_obj = MediaBuyer.objects.get(request_id=data['request_id'])
+                media_buyer_obj = MediaBuyer.objects.get(media_buyer_id=data['media_buyer_id'])
                 update_media_buyer.append(
-                    MediaBuyer(pk=media_buyer_obj.id, email=data['email'], media_buyer_id=data['media_buyer_id'],
-                               name=data['name']))
+                    MediaBuyer(pk=media_buyer_obj.id, email=data['email'], name=data['name']))
             except Exception as e:
                 continue
         if create_media_buyer:
             rsp = MediaBuyer.objects.bulk_create(create_media_buyer, batch_size=100)
-            response['new_media_data'] = rsp
-            response['media_buyer'] = media_buyer
-
+            response['new_media_buyer_data'] = rsp
+        #     response['media_buyer'] = media_buyer
         if update_media_buyer:
-            MediaBuyer.objects.bulk_update(create_media_buyer, ['email', 'media_buyer_id', 'name'],
+            MediaBuyer.objects.bulk_update(create_media_buyer, ['email', 'name'],
                                            batch_size=100)
         return response
 
     def save_media_buyer_advertiser_into_db(self, new_media_buyer_response, media_buyer):
         new_media_buyer_advertiser = []
-        new_media_buyer_data = new_media_buyer_response['new_media_data']
+        new_media_buyer_data = new_media_buyer_response['new_media_buyer_data']
         for i in new_media_buyer_data:
-            request_id = i.request_id
+            media_buyer_id = i.media_buyer_id
             try:
-                if media_buyer[request_id]:
-                    advertiser_id = media_buyer[request_id]['advertiser_id']
-                    advertiser_obj = Advertisers.objects.get(advertiser_id=advertiser_id)
-                    new_media_buyer_advertiser.append(
-                        MediaBuyerAdvertiser(media_buyer_id=i, advertiser_id=advertiser_obj))
+                if media_buyer[media_buyer_id]:
+                    advertiser_ids = media_buyer[media_buyer_id]['advertiser_ids']
+                    if advertiser_ids:
+                        for advertiser_id in advertiser_ids:
+                            advertiser_obj = Advertisers.objects.get(advertiser_id=advertiser_id)
+                            new_media_buyer_advertiser.append(
+                                MediaBuyerAdvertiser(media_buyer_id=i, advertiser_id=advertiser_obj))
             except Exception as e:
                 print(e)
                 continue
@@ -147,8 +149,7 @@ class AirtableView(APIView):
         advertiser_ids = {}
         verticals_data = AirtableView.get_airtable_verticals(self, filterValue)
         for i in AirtableView.get_airtable_accounts(self,
-                                                    filterValue="AND(NOT({{Account ID}}=''),DATESTR({{Created}})='{}')".format(
-                                                        date),
+                                                    filterValue="AND(NOT({Account ID}=''),{BC}='PixelMind')",
                                                     base_id=Search_Arbitrage_Hub_BASE_ID):
             data = i['fields']
             if 'Domains' in data:
