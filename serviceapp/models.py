@@ -12,6 +12,10 @@ def get_vertical_details():
     return {'name': "", 'category': "", 'domains': [], 'stats': [], 'source': [], 'url': []}
 
 
+def get_domain_for():
+    return {'id': "", 'email': "", 'name': ""}
+
+
 class Users(AbstractUser):
     USERMODE_CHOICE = (
         ('1', 'Customer'),
@@ -226,5 +230,18 @@ class VerticalAdvertiser(models.Model):
 
     class Meta:
         db_table = "vertical_advertiser"
+
+
+class Domains(models.Model):
+    domain_id = models.CharField(max_length=100, unique=True)
+    domain_for = models.JSONField(default=get_domain_for)
+    partner_url = models.TextField(null=True)
+    source = models.CharField(max_length=100, null=True)
+    stats = models.CharField(max_length=100, null=True)
+    pixel_id = models.CharField(max_length=255, null=True)
+    created_time = models.DateTimeField(null=True)
+
+    class Meta:
+        db_table = "domains"
 
 
