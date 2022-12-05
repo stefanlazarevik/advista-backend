@@ -245,3 +245,15 @@ class Domains(models.Model):
         db_table = "domains"
 
 
+class System1Revenue(models.Model):
+    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id', db_column='advertiser_id')
+    domain_id = models.ForeignKey(Domains, on_delete=models.SET_NULL, null=True, to_field='domain_id', db_column='domain_id')
+    report_date = models.DateField()
+    clicks = models.IntegerField()
+    revenue = models.FloatField(default=0.0)
+    revenue_per_click = models.FloatField(default=0.0)
+
+    class Meta:
+        db_table = "system1_revenue"
+
+
