@@ -2,7 +2,7 @@ import json
 from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from serviceapp.models import TiktokInfo, Partners
+from serviceapp.models import TiktokInfo, MediaBuyer
 from rest_framework.decorators import api_view, permission_classes
 
 from serviceapp.serializers.partner_serializer import PartnerSerializer
@@ -17,7 +17,7 @@ class PartnerView(APIView):
     def get_partners(request):
         response = {}
         try:
-            partners = Partners.objects.all().order_by('-id')
+            partners = MediaBuyer.objects.all().order_by('-id')
             paginator = CustomPagination()
             result_page = paginator.paginate_queryset(partners, request)
             serializer = PartnerSerializer(result_page, many=True)
