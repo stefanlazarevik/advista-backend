@@ -9,6 +9,7 @@ from .views.adveritsers import AdvertiserView
 from .views.report import ReportView
 # from .views.country_report import CountryReportView
 from .views.partner import PartnerView
+from .views.vertical import VerticalView
 
 router = SimpleRouter()
 router.register(r'users', UserViewSet, basename='user')
@@ -27,6 +28,7 @@ urlpatterns = [
     url(r'^total-report/', ReportView.get_total_report),
     # url(r'^activity-report/', ReportView.get_activity_report),
     url(r'^partners/', PartnerView.get_partners),
+    url(r'^verticals/', VerticalView.get_verticals),
     url(r'^generate-csv/', AdvertiserView.generate_csv),
     url(r'^hello/', AdvertiserView.hello),
     # url(r'^country-report/', CountryReportView.as_view()),
