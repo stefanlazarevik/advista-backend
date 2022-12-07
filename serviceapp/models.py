@@ -100,6 +100,7 @@ class Advertisers(models.Model):
     rejection_reason = models.TextField(null=True)
     create_time = models.BigIntegerField()
     address = models.TextField(null=True)
+    tonic_campaign_name = models.CharField(max_length=255, null=True)
 
     class Meta:
         db_table = "advertisers"
@@ -239,6 +240,8 @@ class VerticalAdvertiser(models.Model):
 
 class Domains(models.Model):
     domain_id = models.CharField(max_length=100, unique=True)
+    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id',
+                                      db_column='advertiser_id')
     domain_for = models.JSONField(default=get_domain_for)
     partner_url = models.TextField(null=True)
     source = models.CharField(max_length=100, null=True)
@@ -251,8 +254,10 @@ class Domains(models.Model):
 
 
 class System1Revenue(models.Model):
-    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id', db_column='advertiser_id')
-    domain_id = models.ForeignKey(Domains, on_delete=models.SET_NULL, null=True, to_field='domain_id', db_column='domain_id')
+    advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id',
+                                      db_column='advertiser_id')
+    domain_id = models.ForeignKey(Domains, on_delete=models.SET_NULL, null=True, to_field='domain_id',
+                                  db_column='domain_id')
     report_date = models.DateField()
     clicks = models.IntegerField()
     revenue = models.FloatField(default=0.0)

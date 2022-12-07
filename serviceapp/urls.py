@@ -24,7 +24,7 @@ urlpatterns = [
                   url(r'^tiktok/get-tiktok-data/', SchedulerView.get_scheduler_data),
                   url(r'^manual-tiktok/get-tiktok-data/', ManualSchedulerView.get_scheduler_data),
                   url(r'^tonic/get-tonic-data/', TonicSchedulerView.get_scheduler_data),
-                  url(r'^airtable/get-airtable-data/', AirtableView.get_scheduler_data),
+                  # url(r'^airtable/get-airtable-data/', AirtableView.get_scheduler_data),
                   url(r'^products/', AdvertiserView.get_advertisers),
                   url(r'^total-report/', ReportView.get_total_report),
                   # url(r'^activity-report/', ReportView.get_activity_report),

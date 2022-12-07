@@ -16,7 +16,7 @@ from serviceapp.serializers.report_serializer import CountryReportSerializer, Da
 from serviceapp.views.tiktok_api import tiktok_get
 from serviceapp.views.helper import LogHelper, UserPermissions
 from datetime import datetime, timedelta, date
-
+from .airtable_api import AirtableView
 from serviceapp.views.tonic_api import get_access_token, get_tonic_daily_report
 
 
@@ -31,6 +31,7 @@ class SchedulerView(APIView):
             country_reports = SchedulerView.get_daily_country_report(request)
             partners = SchedulerView.get_daily_partners(request)
             campaigns = SchedulerView.get_daily_campaigns(request)
+            airtable = SchedulerView.get_airtable_data(request)
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
@@ -280,7 +281,6 @@ class SchedulerView(APIView):
             response["message"] = str(e)
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
-
     def get_report_by_advertiser(request, advertiser_id, access_token, today):
         response = {}
         try:
@@ -308,7 +308,6 @@ class SchedulerView(APIView):
             response["success"] = False
             response["message"] = str(e)
         return response
-
 
     def get_daily_country_report(request):
         response = {}
@@ -381,7 +380,6 @@ class SchedulerView(APIView):
             response["message"] = str(e)
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
-
     def get_country_report_by_advertiser(request, advertiser_id, access_token, today):
         response = {}
         try:
@@ -410,7 +408,6 @@ class SchedulerView(APIView):
             response["success"] = False
             response["message"] = str(e)
         return response
-
 
     def get_daily_partners(request):
         response = {}
@@ -441,7 +438,6 @@ class SchedulerView(APIView):
             response["success"] = False
             response["message"] = str(e)
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
-
 
     def get_daily_campaigns(request):
         response = {}
@@ -530,7 +526,6 @@ class SchedulerView(APIView):
             response["message"] = str(e)
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
-
     def get_campaign_by_advertiser(request, advertiser_id, access_token):
         response = {}
         try:
@@ -561,9 +556,27 @@ class SchedulerView(APIView):
             response["message"] = str(e)
         return response
 
-
     def convert_datetime_timezone(tz):
         now_utc = datetime.now(timezone("UTC"))
         now_timezone = now_utc.astimezone(timezone(tz))
         dt = now_timezone.strftime("%Y-%m-%d")
         return dt
+
+    def get_airtable_data(self):
+        print("-------------media_buyer start................")
+        media_buyer = AirtableView.get_airtable_media_buyer_data()  # Get media_buyer_data from airtable api.
+        new_media_buyer_response = AirtableView.save_media_buyer_into_db(media_buyer)
+        if 'new_media_buyer_data' in new_media_buyer_response:
+            AirtableView.save_media_buyer_advertiser_into_db(new_media_buyer_response, media_buyer)
+        print("-------------media_buyer end................")
+        print("-------------verticals start................")
+        vertical_data = AirtableView.get_airtable_verticals_data()
+        new_vertical_response = AirtableView.save_verticals_data_into_db(vertical_data)
+        if 'new_vertical_data' in new_vertical_response:
+            AirtableView.save_vertical_advertiser_ids_into_db(new_vertical_response, vertical_data)
+        print("-------------verticals end................")
+        print("-------------domain_data start................")
+        domain_data = AirtableView.get_airtable_domains_data()
+        domain_data_obj = AirtableView.save_domains_data_into_db(domain_data)
+        AirtableView.save_advertiser_data_campaign_name(domain_data_obj)
+        print("-------------domain_data end................")
