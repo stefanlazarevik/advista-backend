@@ -1,3 +1,5 @@
+import json
+
 from pytz import timezone
 from django.db.models import Sum, Count, Q
 from rest_framework import viewsets, status, mixins
@@ -56,7 +58,6 @@ class TonicSchedulerView(APIView):
             print("tonic data--->", len(tonic_data))
             campaign_list = TonicSchedulerView.user_campaning_list(request)
             set_campaign_id = TonicSchedulerView.update_tonic_campaign_id(request, campaign_list, tonic_data)
-
             create_campaign_reports, update_campaign_reports = TonicSchedulerView.save_campign_resport(request,
                                                                                                        set_campaign_id,
                                                                                                        timezone_date)
@@ -93,14 +94,27 @@ class TonicSchedulerView(APIView):
                 revenue = 0.0
                 click = 0
                 for i in tonic_data:
-                    if i['subid1'] == campaign:
-                        revenue = revenue + float(i['revenueUsd'])
-                        click = int(click) + int(i['clicks'])
-                        i['revenueUsd'] = revenue
-                        i['clicks'] = click
-                        i['campaign_id'] = i['subid1']
+                    data = {
+                        'date': i['date'],
+                        'campaign_id': i['campaign_id'],
+                        'campaign_name': i['campaign_name'],
+                        'clicks': i['clicks'],
+                        'revenueUsd': i['revenueUsd'],
+                        'subid1': i['subid1'],
+                        'keyword': i['keyword'],
+                        'adtitle': i['adtitle'],
+                        'device': i['device'],
+
+                    }
+                    if data['subid1'] == campaign:
+                        revenue = revenue + float(data['revenueUsd'])
+                        click = int(click) + int(data['clicks'])
+                        data['revenueUsd'] = revenue
+                        data['clicks'] = click
+                        data['campaign_id'] = data['subid1']
+                        data['device'] = data['device']
                         if campaign not in result:
-                            result[campaign] = i
+                            result[campaign] = data
                         else:
                             result[campaign]['revenueUsd'] = revenue
                             result[campaign]['clicks'] = click
@@ -283,23 +297,13 @@ class TonicSchedulerView(APIView):
 
     def save_reports_revenue(self, get_reports_revenune, timezone_date):
         update_list = []
-        new_list = []
-        reports = Reports.objects.values_list('advertiser_id', flat=True).filter(report_date=timezone_date)
-        advertiser_list = [i for i in get_reports_revenune.keys()]
-        new_reports = list(set(advertiser_list).difference(reports))
         for i in get_reports_revenune:
-            id = i
-            if id in new_reports:
-                advertiser = Advertisers.objects.filter(advertiser_id=i).first()
-                if advertiser:
-                    new_list.append(
-                        Reports(revenue=get_reports_revenune[id], advertiser_id=advertiser, report_date=timezone_date))
-            else:
+            try:
                 report = Reports.objects.get(advertiser_id=i, report_date=timezone_date)
-                update_list.append(Reports(pk=report.id, revenue=get_reports_revenune[id]))
-        if new_list:
-            print("new", len(new_list))
-            Reports.objects.bulk_create(new_list, batch_size=100)
+                update_list.append(Reports(pk=report.id, revenue=get_reports_revenune[i]))
+            except Exception as e:
+                continue
+
         if update_list:
-            print("update", len(update_list))
+            print("update-report-table", len(update_list))
             Reports.objects.bulk_update(update_list, ['revenue'], batch_size=100)

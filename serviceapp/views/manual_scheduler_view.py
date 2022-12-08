@@ -12,6 +12,7 @@ from serviceapp.models import TiktokInfo, Advertisers, Reports, CountryReports, 
 from rest_framework.decorators import api_view, permission_classes
 
 from serviceapp.serializers.report_serializer import CountryReportSerializer, DailyReportSerializer
+from serviceapp.views.airtable_api import AirtableView
 from serviceapp.views.tiktok_api import tiktok_get
 from serviceapp.views.helper import LogHelper, UserPermissions
 from datetime import datetime, timedelta, date
@@ -35,6 +36,9 @@ class ManualSchedulerView(APIView):
             print("partners end-----------")
             campaigns = ManualSchedulerView.get_daily_campaigns(request)
             print("campaigns end-----------")
+            print("airtable start.............")
+            airtable = ManualSchedulerView.get_airtable_data(request)
+            print("airtable end.............")
             print("scheduler end-----------")
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
@@ -568,3 +572,22 @@ class ManualSchedulerView(APIView):
         dt = now_timezone.strftime("%Y-%m-%d")
         print(dt)
         return dt
+
+    def get_airtable_data(self):
+        print("-------------media_buyer start................")
+        media_buyer = AirtableView.get_airtable_media_buyer_data()  # Get media_buyer_data from airtable api.
+        new_media_buyer_response = AirtableView.save_media_buyer_into_db(media_buyer)
+        if 'new_media_buyer_data' in new_media_buyer_response:
+            AirtableView.save_media_buyer_advertiser_into_db(new_media_buyer_response, media_buyer)
+        print("-------------media_buyer end................")
+        print("-------------verticals start................")
+        vertical_data = AirtableView.get_airtable_verticals_data()
+        new_vertical_response = AirtableView.save_verticals_data_into_db(vertical_data)
+        if 'new_vertical_data' in new_vertical_response:
+            AirtableView.save_vertical_advertiser_ids_into_db(new_vertical_response, vertical_data)
+        print("-------------verticals end................")
+        print("-------------domain_data start................")
+        domain_data = AirtableView.get_airtable_domains_data()
+        domain_data_obj = AirtableView.save_domains_data_into_db(domain_data)
+        AirtableView.save_advertiser_data_campaign_name(domain_data_obj)
+        print("-------------domain_data end................")
