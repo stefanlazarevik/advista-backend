@@ -143,3 +143,60 @@ class AdvertiserCalculateView(generic.DetailView):
             return round((advertiser.revenue - advertiser.total_cost)/advertiser.total_cost * 100, 2)
         except:
             return 0.00
+
+
+class MediaAdvertiserCalculateView(generic.DetailView):
+
+    def get_total_cost(request, media_advertiser):
+        try:
+            return round(media_advertiser['total_cost'], 2)
+        except:
+            return 0
+
+    def get_revenue(request, media_advertiser):
+        try:
+            return round(media_advertiser['revenue'], 2)
+        except:
+            return 0
+
+    def get_conversion_rate(request, media_advertiser):
+        try:
+            return round(media_advertiser['conversions']/(media_advertiser['clicks']/100), 2)
+        except:
+            return 0.00
+
+    def get_ctr(request, media_advertiser):
+        try:
+            return round((media_advertiser['clicks'] / media_advertiser['impressions']) * 100, 2)
+        except:
+            return 0.00
+
+    def get_cpm(request, media_advertiser):
+        try:
+            return round((media_advertiser['total_cost'] / media_advertiser['impressions']) * 1000, 2)
+        except:
+            return 0.00
+
+    def get_cpc(request, media_advertiser):
+        try:
+            return round((media_advertiser['total_cost'] / media_advertiser['clicks']), 2)
+        except:
+            return 0.00
+
+    def get_cpa(request, media_advertiser):
+        try:
+            return round((media_advertiser['total_cost'] / media_advertiser['conversions']), 2)
+        except:
+            return 0.00
+
+    def get_profit(request, media_advertiser):
+        try:
+            return round((media_advertiser['revenue'] - media_advertiser['total_cost']), 2)
+        except:
+            return 0.00
+
+    def get_roi(request, media_advertiser):
+        try:
+            return round((media_advertiser['revenue'] - media_advertiser['total_cost'])/media_advertiser['total_cost'] * 100, 2)
+        except:
+            return 0.00
