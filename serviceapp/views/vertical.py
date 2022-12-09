@@ -50,6 +50,7 @@ class VerticalView(APIView):
                 vertical_data['conversion_rate'] = MediaAdvertiserCalculateView.get_conversion_rate(request,
                                                                                                        vertical_advertiser)
                 vertical_data['total_cost'] = MediaAdvertiserCalculateView.get_total_cost(request, vertical_advertiser)
+                vertical_data['name'] = vertical_data['details']['name']
                 vertical_data['ctr'] = MediaAdvertiserCalculateView.get_ctr(request, vertical_advertiser)
                 vertical_data['cpm'] = MediaAdvertiserCalculateView.get_cpm(request, vertical_advertiser)
                 vertical_data['cpc'] = MediaAdvertiserCalculateView.get_cpc(request, vertical_advertiser)
