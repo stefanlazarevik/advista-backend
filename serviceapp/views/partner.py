@@ -48,6 +48,9 @@ class PartnerView(APIView):
                 conversions=Sum('advertiser_id__reports__conversion'), impressions=Sum('advertiser_id__reports__impressions'), revenue=Sum('advertiser_id__reports__revenue'))
                 media_buyer_data['conversion_rate'] = MediaAdvertiserCalculateView.get_conversion_rate(request, media_advertiser)
                 media_buyer_data['total_cost'] = MediaAdvertiserCalculateView.get_total_cost(request, media_advertiser)
+                media_buyer_data['clicks'] = media_advertiser['clicks']
+                media_buyer_data['conversions'] = media_advertiser['conversions']
+                media_buyer_data['impressions'] = media_advertiser['impressions']
                 media_buyer_data['ctr'] = MediaAdvertiserCalculateView.get_ctr(request, media_advertiser)
                 media_buyer_data['cpm'] = MediaAdvertiserCalculateView.get_cpm(request, media_advertiser)
                 media_buyer_data['cpc'] = MediaAdvertiserCalculateView.get_cpc(request, media_advertiser)
