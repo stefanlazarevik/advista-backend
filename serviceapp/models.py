@@ -203,6 +203,20 @@ class CampaignReports(models.Model):
     keyword = models.TextField(null=True)
     adtitle = models.TextField(null=True)
     device = models.CharField(max_length=255, null=True)
+
+    class Meta:
+        db_table = "campaign_report"
+
+
+class TonicCampaignReports(models.Model):
+    report_date = models.DateField()
+    revenue = models.FloatField(default=0.0)
+    tonic_campaign_id = models.CharField(max_length=100, null=True)
+    tonic_campaign_name = models.CharField(max_length=500, null=True)
+    clicks = models.IntegerField()
+    keyword = models.TextField(null=True)
+    adtitle = models.TextField(null=True)
+    device = models.CharField(max_length=255, null=True)
     subid1 = models.CharField(max_length=100, null=True)
     subid2 = models.CharField(max_length=100, null=True)
     subid3 = models.CharField(max_length=100, null=True)
@@ -211,7 +225,7 @@ class CampaignReports(models.Model):
     site = models.CharField(max_length=100, null=True)
 
     class Meta:
-        db_table = "campaign_report"
+        db_table = "tonic_campaign_report"
 
 
 class MediaBuyer(models.Model):
