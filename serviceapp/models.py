@@ -13,7 +13,7 @@ def get_vertical_details():
 
 
 def get_creative_video():
-    return [{'id': "", 'url': "", 'filename': "", 'size': 0, 'source': [], 'type': ""}]
+    return {'id': "", 'url': "", 'filename': "", 'size': 0, 'type': ""}
 
 
 def get_create_pixel():
@@ -272,7 +272,7 @@ class Domains(models.Model):
     domain_id = models.CharField(max_length=100, unique=True)
     advertiser_id = models.ForeignKey(Advertisers, on_delete=models.SET_NULL, null=True, to_field='advertiser_id',
                                       db_column='advertiser_id')
-    domain_for = models.JSONField(default=get_domain_for)
+    domain_for = models.JSONField(default=get_domain_for, null=True)
     partner_url = models.TextField(null=True)
     source = models.CharField(max_length=100, null=True)
     stats = models.CharField(max_length=100, null=True)
