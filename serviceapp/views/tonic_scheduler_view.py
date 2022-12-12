@@ -5,7 +5,8 @@ from django.db.models import Sum, Count, Q
 from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from serviceapp.models import Advertisers, Reports, Campaigns, CampaignReports, Domains, System1Revenue
+from serviceapp.models import Advertisers, Reports, Campaigns, CampaignReports, Domains, System1Revenue, \
+    TonicCampaignReports
 from rest_framework.decorators import api_view
 
 from serviceapp.views.airtable_api import AirtableView
@@ -16,6 +17,49 @@ from serviceapp.views.tonic_api import get_access_token, get_tonic_daily_report
 
 
 class TonicSchedulerView(APIView):
+    @api_view(["get"])
+    def get_daily_tonic_data(request):
+        response = {}
+        create_tonic_data = []
+        try:
+            print("scheduler start-----------")
+            LogHelper.ex_time_init("start Tonic")
+            if "today" in request.GET:
+                timezone_date = request.GET.get('today')
+            else:
+                timezone_date = TonicSchedulerView.convert_datetime_timezone("America/Los_Angeles")
+            print(timezone_date)
+            token = TonicSchedulerView.get_tonic_api_token(request)
+            tonic_data = get_tonic_daily_report(timezone_date, token)
+            print("tonic_data-->", len(tonic_data))
+            for data in tonic_data:
+                create_tonic_data.append(TonicCampaignReports(
+                    report_date=timezone_date,
+                    revenue=data['revenueUsd'],
+                    tonic_campaign_id=data['subid1'],
+                    tonic_campaign_name=data['campaign_name'],
+                    clicks=data['clicks'],
+                    keyword=data['keyword'],
+                    adtitle=data['adtitle'],
+                    device=data['device'],
+                    subid1=data['subid1'],
+                    subid2=data['subid2'],
+                    subid3=data['subid3'],
+                    subid4=data['subid4'],
+                    network=data['network'],
+                    site=data['site']
+                ))
+            if create_tonic_data:
+                TonicCampaignReports.objects.bulk_create(create_tonic_data, batch_size=1000)
+            LogHelper.ex_time()
+            print("scheduler end-----------")
+            response["success"] = True
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            LogHelper.efail(e)
+            response["success"] = False
+            response["message"] = str(e)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
     @api_view(["get"])
     def get_scheduler_data(request):

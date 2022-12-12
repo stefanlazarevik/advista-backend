@@ -138,8 +138,9 @@ class AirtableView(APIView):
 
     @staticmethod
     def get_airtable_domains_data():
-        filterValue = "AND({BC (from Tiktok Account)}='PixelMind',NOT({Account ID (from Accounts)}=''))"
-        domains_data = AirtableView.get_airtable_domains(filterValue)
+        # filterValue = "AND({BC (from Tiktok Account)}='PixelMind',NOT({Account ID (from Accounts)}=''))"
+        # domains_data = AirtableView.get_airtable_domains(filterValue)
+        domains_data = AirtableView.get_airtable_domains()
         return domains_data
 
     @staticmethod
@@ -249,7 +250,7 @@ class AirtableView(APIView):
         return True
 
     @staticmethod
-    def save_revenue_into_reports_db( get_system1_revenue_using_domain):
+    def save_revenue_into_reports_db(get_system1_revenue_using_domain):
         for i in get_system1_revenue_using_domain:
             try:
                 revenue = get_system1_revenue_using_domain[i]
@@ -274,96 +275,148 @@ class AirtableView(APIView):
                     'domain_for': {'id': data['Domain for']['id'],
                                    'email': data['Domain for']['email'],
                                    'name': data['Domain for']['name']} if 'Domain for' in data else None,
-                    'partner_url': data["Partner URL"],
-                    'source': data["Source"],
-                    'stats': data["Stats"],
+                    'partner_url': data["Partner URL"] if "Partner URL" in data else None,
+                    'source': data["Source"] if "Source" in data else None,
+                    'stats': data["Stats"] if "Stats" in data else None,
                     'pixel_id': data["Pixel ID"] if 'Pixel ID' in data else None,
-                    'campaign_name': data["Request ID"].strip() if "Request ID" in data else None,
+                    'country': data['Country'] if "Country" in data else None,
+                    'creative_text': data['Creative Text'] if "Creative Text" in data else None,
+                    'create_video': {'id': data["Creative Video"]["id"], 'url': data["Creative Video"]["url"],
+                                     'filename': data["Creative Video"]["filename"],
+                                     'size': data["Creative Video"]["size"],
+                                     'source': data["Creative Video"]["type"],
+                                     'type': ""} if "Creative Video" in data else None,
+                    'language': data['Language'] if "Language" in data else None,
+                    'network': data['Network'] if "Network" in data else None,
+                    'tracker_url': data['Tracker URL'] if "Tracker URL" in data else None,
+                    'ticket_no': data['Ticket #'] if 'Ticket #' in data else None,
+                    'tiktok_account': data['Tiktok Account'] if "Tiktok Account" in data else None,
+                    'type': data['Type'] if "Type" in data else None,
+                    'request_id': data["Request ID"].strip() if "Request ID" in data else None,
+                    'category': data['Category'] if "Category" in data else None,
+                    'create_pixel': {'label': data["Creative Video"]["label"],
+                                     'url': data["Creative Video"]["url"]} if "Create Pixel" in data else None,
+                    'status': data['Status (from Accounts)'] if "Status (from Accounts)" in data else None,
+                    'open_account': data[
+                        'Open Account (from Accounts)'] if "Open Account (from Accounts)" in data else None,
+                    'account_button': data['Account Button'] if "Account Button" in data else None,
+                    'pixel_fire': {'label': data["Pixel Fire"]["label"],
+                                   'url': data["Pixel Fire"]["url"]} if "Pixel Fire" in data else None,
+                    'bc': data['BC (from Tiktok Account)'] if "BC (from Tiktok Account)" in data else None,
+                    'vertical_name': data['Vertical Name'] if "Vertical Name" in data else None,
+                    'name': data['Name (from Tiktok Account)'] if "Name (from Tiktok Account)" in data else None,
+                    # 'campaign_name': data["Request ID"].strip() if "Request ID" in data else None,
                     'created_time': data["Created time"]})
             except Exception as e:
                 print(e)
                 continue
-
         existence_domains_ids = Domains.objects.values_list('domain_id', flat=True).filter(domain_id__in=domains_ids)
         new_domains_ids = list(set(domains_ids).difference(existence_domains_ids))
         for i in domains_data_obj:
             try:
                 data = i
                 advertiser = Advertisers.objects.filter(advertiser_id=data['account_id']).first()
-                if data['domain_id'] in new_domains_ids and advertiser:
+                if data['domain_id'] in new_domains_ids:
                     new_domain_data.append(
-                        Domains(domain_id=data['domain_id'], domain_for=data['domain_for'],
-                                advertiser_id=advertiser,
+                        Domains(domain_id=data['domain_id'], advertiser_id=advertiser if advertiser else None,
+                                domain_for=data['domain_for'],
                                 partner_url=data['partner_url'],
                                 source=data['source'], stats=data['stats'], pixel_id=data['pixel_id'],
+                                country=data['country'], creative_text=['creative_text'],
+                                creative_video=['create_video'],
+                                language=data['language'], network=data['network'], tracker_url=data['tracker_url'],
+                                ticket_no=data['ticket_no'], tiktok_account=data['tiktok_account'], type=['type'],
+                                request_id=data['request_id'], category=data['category'],
+                                create_pixel=data['create_pixel'], status=data['status'],
+                                open_account=data['open_account'], account_button=data['account_button'],
+                                pixel_fire=data['pixel_fire'], bc=data['bc'], vertical_name=data['vertical_name'],
+                                name=data['name'],
                                 created_time=data['created_time']))
                 else:
-                    if advertiser:
-                        domain_obj = Domains.objects.filter(domain_id=data['domain_id']).first()
-                        update_domain_data.append(
-                            Domains(pk=domain_obj.id, advertiser_id=advertiser, domain_for=data['domain_for'],
-                                    partner_url=data['partner_url'],
-                                    source=data['source'], stats=data['stats'], pixel_id=data['pixel_id'],
-                                    created_time=data['created_time']))
-            except:
+                    domain_obj = Domains.objects.filter(domain_id=data['domain_id']).first()
+                    update_domain_data.append(
+                        Domains(pk=domain_obj.id, advertiser_id=advertiser if advertiser else None,
+                                domain_for=data['domain_for'],
+                                partner_url=data['partner_url'],
+                                source=data['source'], stats=data['stats'], pixel_id=data['pixel_id'],
+                                country=data['country'], creative_text=['creative_text'],
+                                creative_video=['create_video'],
+                                language=data['language'], network=data['network'], tracker_url=data['tracker_url'],
+                                ticket_no=data['ticket_no'], tiktok_account=data['tiktok_account'], type=['type'],
+                                request_id=data['request_id'], category=data['category'],
+                                create_pixel=data['create_pixel'], status=data['status'],
+                                open_account=data['open_account'], account_button=data['account_button'],
+                                pixel_fire=data['pixel_fire'], bc=data['bc'], vertical_name=data['vertical_name'],
+                                name=data['name'],
+                                created_time=data['created_time']))
+            except Exception as e:
+                print(e)
                 continue
-        if new_domain_data:
-            Domains.objects.bulk_create(new_domain_data, batch_size=100)
-        if update_domain_data:
-            Domains.objects.bulk_update(update_domain_data,
-                                        ['advertiser_id', 'domain_for', 'partner_url', 'source', 'stats', 'pixel_id',
-                                         'created_time'],
-                                        batch_size=100)
-        return domains_data_obj
+            if new_domain_data:
+                print("new_domain_data-->", len(new_domain_data))
+                Domains.objects.bulk_create(new_domain_data, batch_size=100)
+            if update_domain_data:
+                print("update_domain_data-->", len(update_domain_data))
+                Domains.objects.bulk_update(update_domain_data,
+                                            ['advertiser_id', 'domain_for', 'partner_url', 'source', 'stats',
+                                             'pixel_id', 'country', 'creative_text', 'create_video', 'language',
+                                             'network', 'tracker_url', 'ticket_no', 'tiktok_account', 'type',
+                                             'request_id',
+                                             'category', 'create_pixel', 'status', 'open_account', 'account_button',
+                                             'pixel_fire', 'bc', 'vertical_name', 'name',
+                                             'created_time'],
+                                            batch_size=200)
+            print("domains_data_obj-->", len(domains_data_obj))
+            return domains_data_obj
 
-    @staticmethod
-    def save_system1_campaign_revenue_into_db(get_system1_revenue_using_domain, date):
-        domain_ids = []
-        new_domain_advertiser_revenue = []
-        update_domain_advertiser_revenue = []
-        for i in list(get_system1_revenue_using_domain.values()):
-            domain_ids.append(i['domain_id'])
-        existence_domains_ids = System1Revenue.objects.values_list('domain_id', flat=True).filter(
-            domain_id__in=domain_ids, report_date=date)
-        new_domain_ids = list(set(domain_ids).difference(existence_domains_ids))
-        for i in list(get_system1_revenue_using_domain.values()):
-            try:
-                domain_id = i['domain_id']
-                if domain_id in new_domain_ids:
-                    domain = Domains.objects.filter(domain_id=domain_id).first()
-                    advertiser = Advertisers.objects.get(advertiser_id=i['advertiser_id'])
-                    if domain and advertiser:
-                        new_domain_advertiser_revenue.append(
-                            System1Revenue(domain_id=domain, report_date=i['report_date'], clicks=i['clicks'],
-                                           revenue=i['revenue'],
-                                           revenue_per_click=i['revenue_per_click'], advertiser_id=advertiser))
-                else:
-                    data = System1Revenue.objects.filter(domain_id=domain_id, report_date=date).first()
-                    if data:
-                        update_domain_advertiser_revenue.append(
-                            System1Revenue(pk=data.id, clicks=i['clicks'],
-                                           revenue=i['revenue'],
-                                           revenue_per_click=i['revenue_per_click']))
-            except:
-                continue
-        if new_domain_advertiser_revenue:
-            rsp = System1Revenue.objects.bulk_create(new_domain_advertiser_revenue, batch_size=1000)
-            print(rsp)
-        if update_domain_advertiser_revenue:
-            rsp = System1Revenue.objects.bulk_update(update_domain_advertiser_revenue,
-                                                     ['clicks', 'revenue', 'revenue_per_click'], batch_size=100)
-        return True
+        @staticmethod
+        def save_system1_campaign_revenue_into_db(get_system1_revenue_using_domain, date):
+            domain_ids = []
+            new_domain_advertiser_revenue = []
+            update_domain_advertiser_revenue = []
+            for i in list(get_system1_revenue_using_domain.values()):
+                domain_ids.append(i['domain_id'])
+            existence_domains_ids = System1Revenue.objects.values_list('domain_id', flat=True).filter(
+                domain_id__in=domain_ids, report_date=date)
+            new_domain_ids = list(set(domain_ids).difference(existence_domains_ids))
+            for i in list(get_system1_revenue_using_domain.values()):
+                try:
+                    domain_id = i['domain_id']
+                    if domain_id in new_domain_ids:
+                        domain = Domains.objects.filter(domain_id=domain_id).first()
+                        advertiser = Advertisers.objects.get(advertiser_id=i['advertiser_id'])
+                        if domain and advertiser:
+                            new_domain_advertiser_revenue.append(
+                                System1Revenue(domain_id=domain, report_date=i['report_date'], clicks=i['clicks'],
+                                               revenue=i['revenue'],
+                                               revenue_per_click=i['revenue_per_click'], advertiser_id=advertiser))
+                    else:
+                        data = System1Revenue.objects.filter(domain_id=domain_id, report_date=date).first()
+                        if data:
+                            update_domain_advertiser_revenue.append(
+                                System1Revenue(pk=data.id, clicks=i['clicks'],
+                                               revenue=i['revenue'],
+                                               revenue_per_click=i['revenue_per_click']))
+                except:
+                    continue
+            if new_domain_advertiser_revenue:
+                rsp = System1Revenue.objects.bulk_create(new_domain_advertiser_revenue, batch_size=1000)
+                print(rsp)
+            if update_domain_advertiser_revenue:
+                rsp = System1Revenue.objects.bulk_update(update_domain_advertiser_revenue,
+                                                         ['clicks', 'revenue', 'revenue_per_click'], batch_size=100)
+            return True
 
-    @staticmethod
-    def save_advertiser_data_campaign_name(domain_data_obj):
-        advertiser_list = {}
-        update_advertiser_tonic_campaign_name = []
-        for i in domain_data_obj:
-            advertiser_list[i['account_id']] = i['campaign_name']
-        get_advertiser_list = Advertisers.objects.filter(advertiser_id__in=list(advertiser_list.keys()))
-        for i in get_advertiser_list:
-            update_advertiser_tonic_campaign_name.append(
-                Advertisers(pk=i.id, tonic_campaign_name=advertiser_list[i.advertiser_id]))
-        if update_advertiser_tonic_campaign_name:
-            Advertisers.objects.bulk_update(update_advertiser_tonic_campaign_name, ['tonic_campaign_name'],
-                                            batch_size=100)
+        @staticmethod
+        def save_advertiser_data_campaign_name(domain_data_obj):
+            advertiser_list = {}
+            update_advertiser_tonic_campaign_name = []
+            for i in domain_data_obj:
+                advertiser_list[i['account_id']] = i['campaign_name']
+            get_advertiser_list = Advertisers.objects.filter(advertiser_id__in=list(advertiser_list.keys()))
+            for i in get_advertiser_list:
+                update_advertiser_tonic_campaign_name.append(
+                    Advertisers(pk=i.id, tonic_campaign_name=advertiser_list[i.advertiser_id]))
+            if update_advertiser_tonic_campaign_name:
+                Advertisers.objects.bulk_update(update_advertiser_tonic_campaign_name, ['tonic_campaign_name'],
+                                                batch_size=100)
