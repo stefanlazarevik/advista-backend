@@ -288,48 +288,97 @@ class TonicSchedulerView(APIView):
         result = {}
         for i in domains_data:
             data = i
-            if data.source == 'System1':
-                domain = \
-                    data.partner_url.replace('http://', '').replace("/", '').replace(":", "").replace("https",
-                                                                                                      "").split(
-                        "?rskey")[0]
-                advertiser_id = data.advertiser_id.advertiser_id.strip()
-                result[domain] = {
-                    'advertiser_id': advertiser_id,
-                    'domain_id': data.domain_id
-                }
-        domain_list = list(result.keys())
-        campaign = ','.join(domain_list)
+            domain = \
+                data.partner_url.replace('http://', '').replace("/", '').replace(":", "").replace("https", "").replace(
+                    "https://", '').split(
+                    "?rskey")[0] if data.partner_url else None
+            advertiser_id = data.advertiser_id.advertiser_id.strip() if data.advertiser_id else None
+            if domain:
+                if domain in result:
+                    print(domain)
+                else:
+                    result[domain] = {
+                        'advertiser_id': advertiser_id,
+                        'domain_id': data.domain_id
+                    }
+        # domain_list = list(result.keys())
+        # campaign = ','.join(domain_list)
         params = {
             'days': date,
-            'campaign': campaign
+            # 'campaign': campaign
         }
         get_system1_campaign = get_system1_campaign_data(params)
+        print("size-of-system1-campaign-->", len(get_system1_campaign))
         system1_obj = {}
         for i in get_system1_campaign[1:]:
-            domain = i[1]
-            if domain:
-                revenue = i[12]
-                clicks = i[11]
-                revenue_per_click = i[16]
-                if domain in system1_obj:
-                    system1_obj[domain]['revenue'] = system1_obj[domain]['revenue'] + float(revenue)
-                    system1_obj[domain]['clicks'] = system1_obj[domain]['clicks'] + clicks
-                    system1_obj[domain]['revenue_per_click'] = system1_obj[domain]['revenue_per_click'] + float(
-                        revenue_per_click)
-                else:
-                    system1_obj[domain] = {
-                        'report_date': date,
-                        'clicks': i[11],
-                        'revenue': i[12],
-                        'revenue_per_click': i[16],
-                    }
+            try:
+                domain = i[1]
+                data = i
+                system1_data = {
+                    'report_date': date,
+                    'campaign': data[1],
+                    'total_sessions': data[2],
+                    'mobile_sessions': data[3],
+                    'desktop_sessions': data[4],
+                    'mobile_sessions_percentage': data[5],
+                    'distinct_ip': data[6],
+                    'distinct_mobile_ip': data[7],
+                    'distinct_desktop_ip': data[8],
+                    'distinct_mobile_ip_percentage': data[9],
+                    'searches': data[10],
+                    'clicks': data[11],
+                    'revenue': data[12],
+                    'revenue_per_session': data[13],
+                    'revenue_per_search': data[14],
+                    'revenue_per_ip': data[15],
+                    'revenue_per_click': data[16],
+                    'click_per_session_percentage': data[17],
+                    'advertiser_id': None,
+                }
+                if domain:
+                    search = i[10]
+                    revenue = i[12]
+                    clicks = i[11]
+                    revenue_per_click = i[16]
+                    revenue_per_session = i[13]
+                    revenue_per_search = i[14]
+                    revenue_per_ip = i[15]
+                    distinct_ip = data[6],
+                    distinct_mobile_ip = data[7],
+                    distinct_desktop_ip = data[8],
+                    if domain in system1_obj:
+                        system1_obj[domain]['distinct_ip'] = system1_obj[domain]['distinct_ip'] + distinct_ip
+                        system1_obj[domain]['distinct_mobile_ip'] = system1_obj[domain][
+                                                                        'distinct_mobile_ip'] + distinct_mobile_ip
+                        system1_obj[domain]['distinct_desktop_ip'] = system1_obj[domain][
+                                                                         'distinct_desktop_ip'] + distinct_mobile_ip
+
+                        system1_obj[domain]['revenue_per_ip'] = system1_obj[domain]['revenue_per_ip'] + float(
+                            revenue_per_ip)
+                        system1_obj[domain]['search'] = system1_obj[domain]['search'] + float(search)
+                        system1_obj[domain]['revenue'] = system1_obj[domain]['revenue'] + float(revenue)
+                        system1_obj[domain]['clicks'] = system1_obj[domain]['clicks'] + clicks
+                        system1_obj[domain]['revenue_per_session'] = system1_obj[domain]['revenue_per_session'] + float(
+                            revenue_per_session)
+                        system1_obj[domain]['revenue_per_search'] = system1_obj[domain]['revenue_per_search'] + float(
+                            revenue_per_search)
+                        system1_obj[domain]['revenue_per_click'] = system1_obj[domain]['revenue_per_click'] + float(
+                            revenue_per_click)
+                    else:
+                        system1_obj[domain] = system1_data
+            except Exception as e:
+                print(e)
+                continue
         for i in system1_obj:
             try:
-                advertiser = result[i]['advertiser_id']
-                system1_obj[i]['advertiser_id'] = advertiser
-                system1_obj[i]['domain_id'] = result[i]['domain_id']
+                if i in result:
+                    advertiser = result[i]['advertiser_id']
+                    system1_obj[i]['advertiser_id'] = advertiser
+                    system1_obj[i]['domain_id'] = result[i]['domain_id']
+                else:
+                    system1_obj[i]['domain_id'] = None
             except Exception as e:
+                print("error-->", e)
                 continue
         return system1_obj
 

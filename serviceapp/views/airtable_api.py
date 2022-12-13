@@ -1,5 +1,7 @@
 from pyairtable import Table
 from rest_framework.views import APIView
+
+from .helper import LogHelper
 from .system1_api import get_system1_campaign_data
 from ..models import *
 
@@ -44,21 +46,27 @@ class AirtableView(APIView):
     @staticmethod
     def get_airtable_media_buyer_data():
         media_buyer = {}
-        # filterValue = "AND(NOT({{Account ID}}=''),DATESTR({{Created}})='{}')".format(date)
-        filterValue = "AND(NOT({Account ID}=''),{BC}='PixelMind')"
-        accounts_data = AirtableView.get_airtable_accounts(filterValue, Accounts_Links_Hub_BASE_ID)
-        for i in accounts_data:
-            data = i['fields']
-            id = data['Requested by']['id'].strip()
-            account_id = data['Account ID'].strip() if data['Account ID'] else None
-            if account_id:
+        try:
+            # filterValue = "AND(NOT({{Account ID}}=''),DATESTR({{Created}})='{}')".format(date)
+            # filterValue = "AND(NOT({Account ID}=''),{BC}='PixelMind')"
+            accounts_data = AirtableView.get_airtable_accounts(None, Accounts_Links_Hub_BASE_ID)
+            for i in accounts_data:
+                data = i['fields']
+                id = data['Requested by']['id'].strip()
+                account_id = data['Account ID'].strip() if 'Account ID' in data else None
+                bc = data['BC'] if 'BC' in data else None
+
                 if id in media_buyer:
                     media_buyer[id]['advertiser_ids'].append(account_id)
+                    media_buyer[id]['bc'].append(bc)
                 else:
                     result = {'media_buyer_id': id,
                               'email': data['Requested by']['email'].strip(),
-                              'name': data['Requested by']['name'].strip(), 'advertiser_ids': [account_id]}
+                              'name': data['Requested by']['name'].strip(), 'advertiser_ids': [account_id], 'bc': [bc]}
                     media_buyer[id] = result
+                media_buyer[id]['bc'] = list(set(media_buyer[id]['bc']))
+        except Exception as e:
+            LogHelper.efail(e)
         return media_buyer
 
     @staticmethod
@@ -75,21 +83,20 @@ class AirtableView(APIView):
             data = media_buyer[i]
             create_media_buyer.append(
                 MediaBuyer(media_buyer_id=data['media_buyer_id'], email=data['email'],
-                           name=data['name']))
+                           name=data['name'], bc=data['bc']))
         for i in existence_media_buyer:
             try:
                 data = media_buyer[i]
                 media_buyer_obj = MediaBuyer.objects.get(media_buyer_id=data['media_buyer_id'])
                 update_media_buyer.append(
-                    MediaBuyer(pk=media_buyer_obj.id, email=data['email'], name=data['name']))
+                    MediaBuyer(pk=media_buyer_obj.id, email=data['email'], name=data['name'], bc=data['bc']))
             except Exception as e:
                 continue
         if create_media_buyer:
             rsp = MediaBuyer.objects.bulk_create(create_media_buyer, batch_size=100)
             response['new_media_buyer_data'] = rsp
-        #     response['media_buyer'] = media_buyer
         if update_media_buyer:
-            MediaBuyer.objects.bulk_update(create_media_buyer, ['email', 'name'],
+            MediaBuyer.objects.bulk_update(update_media_buyer, ['email', 'name', 'bc'],
                                            batch_size=100)
         return response
 
@@ -118,7 +125,9 @@ class AirtableView(APIView):
     def get_airtable_verticals_data():
         # filterValue = "NOT({Domains}='')"
         advertiser_ids = {}
+        count = 0
         verticals_data = AirtableView.get_airtable_verticals()
+        print("verticals_data-size", len(verticals_data))
         for i in AirtableView.get_airtable_accounts(filterValue="AND(NOT({Account ID}=''))",
                                                     base_id=Search_Arbitrage_Hub_BASE_ID):
             data = i['fields']
@@ -130,9 +139,15 @@ class AirtableView(APIView):
             if 'Domains' in data:
                 for domain in data['Domains']:
                     try:
-                        data['Account ID'] = advertiser_ids[domain]['account_id']
-                        data['BC'] = advertiser_ids[domain]['bc']
-                    except:
+                        if 'Account ID' in data:
+                            data['Account ID'].append(advertiser_ids[domain]['account_id'])
+                        else:
+                            data['Account ID'] = [advertiser_ids[domain]['account_id']]
+                        if 'BC' in data:
+                            data['BC'].append(advertiser_ids[domain]['bc'])
+                        else:
+                            data['BC'] = [advertiser_ids[domain]['bc']]
+                    except Exception as e:
                         continue
         return verticals_data
 
@@ -203,7 +218,7 @@ class AirtableView(APIView):
         request_ids = [i['id'] for i in vertical_data]
         vertical_data_list = Vertical.objects.values_list('vertical_id', flat=True).filter(vertical_id__in=request_ids)
         new_vertical_data_list = list(set(request_ids).difference(vertical_data_list))
-        print(new_vertical_data_list)
+        print("new_vertical_data_list---size------->", len(new_vertical_data_list))
         for i in vertical_data:
             try:
                 data = i['fields']
@@ -244,11 +259,16 @@ class AirtableView(APIView):
         for i in new_vertical_response['new_vertical_data']:
             try:
                 if i.vertical_id in list(new_vertical_response['new_vertical_advertiser_obj'].keys()):
-                    advertiser_id = new_vertical_response['new_vertical_advertiser_obj'][i.vertical_id]
-                    if advertiser_id:
-                        advertiser = Advertisers.objects.get(advertiser_id=str(advertiser_id).strip())
-                        new_vertical_advertiser_data.append(VerticalAdvertiser(vertical_id=i, advertiser_id=advertiser))
-            except:
+                    advertiser_ids = new_vertical_response['new_vertical_advertiser_obj'][i.vertical_id]
+                    for advertiser_id in advertiser_ids:
+                        advertiser = Advertisers.objects.filter(advertiser_id=str(advertiser_id).strip()).first()
+                        if advertiser:
+                            new_vertical_advertiser_data.append(
+                                VerticalAdvertiser(vertical_id=i, advertiser_id=advertiser))
+                        else:
+                            new_vertical_advertiser_data.append(
+                                VerticalAdvertiser(vertical_id=i, advertiser_id=advertiser))
+            except Exception as e:
                 continue
         if new_vertical_advertiser_data:
             VerticalAdvertiser.objects.bulk_create(new_vertical_advertiser_data, batch_size=100)
@@ -358,7 +378,6 @@ class AirtableView(APIView):
                                 name=data['name'],
                                 created_time=data['created_time']))
             except Exception as e:
-                print(e)
                 continue
         if new_domain_data:
             print("new_domain_data-->", len(new_domain_data))
@@ -385,33 +404,74 @@ class AirtableView(APIView):
             domain_ids.append(i['domain_id'])
         existence_domains_ids = System1Revenue.objects.values_list('domain_id', flat=True).filter(
             domain_id__in=domain_ids, report_date=date)
-        new_domain_ids = list(set(domain_ids).difference(existence_domains_ids))
+        print("domain_ids-size--->", len(domain_ids))
+        print("domain_ids-size--->", len(set(domain_ids)))
+        # new_domain_ids = list(set(domain_ids).difference(existence_domains_ids))
+        # print("domain_ids--->", len(new_domain_ids))
         for i in list(get_system1_revenue_using_domain.values()):
             try:
                 domain_id = i['domain_id']
-                if domain_id in new_domain_ids:
-                    domain = Domains.objects.filter(domain_id=domain_id).first()
-                    advertiser = Advertisers.objects.get(advertiser_id=i['advertiser_id'])
-                    if domain and advertiser:
-                        new_domain_advertiser_revenue.append(
-                            System1Revenue(domain_id=domain, report_date=i['report_date'], clicks=i['clicks'],
-                                           revenue=i['revenue'],
-                                           revenue_per_click=i['revenue_per_click'], advertiser_id=advertiser))
-                else:
+                if domain_id in existence_domains_ids:
                     data = System1Revenue.objects.filter(domain_id=domain_id, report_date=date).first()
+                    advertiser = Advertisers.objects.filter(advertiser_id=i['advertiser_id']).first()
                     if data:
                         update_domain_advertiser_revenue.append(
-                            System1Revenue(pk=data.id, clicks=i['clicks'],
+                            System1Revenue(pk=data.id, campaign=i['campaign'], total_sessions=i['total_sessions'],
+                                           mobile_sessions=i['mobile_sessions'], desktop_sessions=i['desktop_sessions'],
+                                           mobile_sessions_percentage=i['mobile_sessions_percentage'],
+                                           distinct_ip=i['distinct_ip'],
+                                           distinct_mobile_ip=i['distinct_mobile_ip'],
+                                           distinct_desktop_ip=i['distinct_desktop_ip'],
+                                           distinct_mobile_ip_percentage=i['distinct_mobile_ip_percentage'],
+                                           searches=i['searches'],
+                                           clicks=i['clicks'],
                                            revenue=i['revenue'],
-                                           revenue_per_click=i['revenue_per_click']))
-            except:
+                                           revenue_per_session=i['revenue_per_session'],
+                                           revenue_per_search=i['revenue_per_search'],
+                                           revenue_per_ip=i['revenue_per_ip'],
+                                           revenue_per_click=i['revenue_per_click'],
+                                           click_per_session_percentage=i['click_per_session_percentage'],
+                                           advertiser_id=advertiser
+                                           ))
+                else:
+                    domain = Domains.objects.filter(domain_id=domain_id).first()
+                    advertiser = Advertisers.objects.filter(advertiser_id=i['advertiser_id']).first()
+                    new_domain_advertiser_revenue.append(
+                        System1Revenue(domain_id=domain, report_date=i['report_date'], campaign=i['campaign'],
+                                       total_sessions=i['total_sessions'],
+                                       mobile_sessions=i['mobile_sessions'], desktop_sessions=i['desktop_sessions'],
+                                       mobile_sessions_percentage=i['mobile_sessions_percentage'],
+                                       distinct_ip=i['distinct_ip'],
+                                       distinct_mobile_ip=i['distinct_mobile_ip'],
+                                       distinct_desktop_ip=i['distinct_desktop_ip'],
+                                       distinct_mobile_ip_percentage=i['distinct_mobile_ip_percentage'],
+                                       searches=i['searches'],
+                                       clicks=i['clicks'],
+                                       revenue=i['revenue'],
+                                       revenue_per_session=i['revenue_per_session'],
+                                       revenue_per_search=i['revenue_per_search'],
+                                       revenue_per_ip=i['revenue_per_ip'],
+                                       revenue_per_click=i['revenue_per_click'],
+                                       click_per_session_percentage=i['click_per_session_percentage'],
+                                       advertiser_id=advertiser
+                                       ))
+            except Exception as e:
+                print("error-->", e)
                 continue
+        print("new-revenue--->", len(new_domain_advertiser_revenue))
+        print("update-revenue--->", len(update_domain_advertiser_revenue))
         if new_domain_advertiser_revenue:
             rsp = System1Revenue.objects.bulk_create(new_domain_advertiser_revenue, batch_size=1000)
-            print(rsp)
         if update_domain_advertiser_revenue:
             rsp = System1Revenue.objects.bulk_update(update_domain_advertiser_revenue,
-                                                     ['clicks', 'revenue', 'revenue_per_click'], batch_size=100)
+                                                     ['campaign', 'total_sessions', 'mobile_sessions',
+                                                      'desktop_sessions', 'mobile_sessions_percentage', 'distinct_ip',
+                                                      'distinct_mobile_ip', 'distinct_desktop_ip',
+                                                      'distinct_mobile_ip_percentage', 'searches', 'clicks', 'revenue',
+                                                      'revenue_per_session', 'revenue_per_search', 'revenue_per_ip',
+                                                      'revenue_per_click', 'click_per_session_percentage',
+                                                      'advertiser_id'], batch_size=100)
+
         return True
 
     @staticmethod

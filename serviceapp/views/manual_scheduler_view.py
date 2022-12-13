@@ -25,21 +25,21 @@ class ManualSchedulerView(APIView):
     def get_scheduler_data(request):
         response = {}
         try:
-            # print("scheduler start-----------")
-            # advertisers = ManualSchedulerView.get_daily_advertisers(request)
-            # print("advertisers end-----------")
-            # reports = ManualSchedulerView.get_daily_report(request)
-            # print("reports end-----------")
-            # country_reports = ManualSchedulerView.get_daily_country_report(request)
-            # print("country_reports end-----------")
-            # partners = ManualSchedulerView.get_daily_partners(request)
-            # print("partners end-----------")
-            # campaigns = ManualSchedulerView.get_daily_campaigns(request)
-            # print("campaigns end-----------")
+            print("scheduler start-----------")
+            advertisers = ManualSchedulerView.get_daily_advertisers(request)
+            print("advertisers end-----------")
+            reports = ManualSchedulerView.get_daily_report(request)
+            print("reports end-----------")
+            country_reports = ManualSchedulerView.get_daily_country_report(request)
+            print("country_reports end-----------")
+            partners = ManualSchedulerView.get_daily_partners(request)
+            print("partners end-----------")
+            campaigns = ManualSchedulerView.get_daily_campaigns(request)
+            print("campaigns end-----------")
             print("airtable start.............")
             airtable = ManualSchedulerView.get_airtable_data(request)
             print("airtable end.............")
-            # print("scheduler end-----------")
+            print("scheduler end-----------")
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
@@ -574,18 +574,18 @@ class ManualSchedulerView(APIView):
         return dt
 
     def get_airtable_data(self):
-        # print("-------------media_buyer start................")
-        # media_buyer = AirtableView.get_airtable_media_buyer_data()  # Get media_buyer_data from airtable api.
-        # new_media_buyer_response = AirtableView.save_media_buyer_into_db(media_buyer)
-        # if 'new_media_buyer_data' in new_media_buyer_response:
-        #     AirtableView.save_media_buyer_advertiser_into_db(new_media_buyer_response, media_buyer)
-        # print("-------------media_buyer end................")
-        # print("-------------verticals start................")
-        # vertical_data = AirtableView.get_airtable_verticals_data()
-        # new_vertical_response = AirtableView.save_verticals_data_into_db(vertical_data)
-        # if 'new_vertical_data' in new_vertical_response:
-        #     AirtableView.save_vertical_advertiser_ids_into_db(new_vertical_response, vertical_data)
-        # print("-------------verticals end................")
+        print("-------------media_buyer start................")
+        media_buyer = AirtableView.get_airtable_media_buyer_data()  # Get media_buyer_data from airtable api.
+        new_media_buyer_response = AirtableView.save_media_buyer_into_db(media_buyer)
+        if 'new_media_buyer_data' in new_media_buyer_response:
+            AirtableView.save_media_buyer_advertiser_into_db(new_media_buyer_response, media_buyer)
+        print("-------------media_buyer end................")
+        print("-------------verticals start................")
+        vertical_data = AirtableView.get_airtable_verticals_data()
+        new_vertical_response = AirtableView.save_verticals_data_into_db(vertical_data)
+        if 'new_vertical_data' in new_vertical_response:
+            AirtableView.save_vertical_advertiser_ids_into_db(new_vertical_response, vertical_data)
+        print("-------------verticals end................")
         print("-------------domain_data start................")
         domain_data = AirtableView.get_airtable_domains_data()
         domain_data_obj = AirtableView.save_domains_data_into_db(domain_data)

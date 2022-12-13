@@ -26,11 +26,11 @@ class SchedulerView(APIView):
     def get_scheduler_data(request):
         response = {}
         try:
-            # advertisers = SchedulerView.get_daily_advertisers(request)
-            # reports = SchedulerView.get_daily_report(request)
-            # country_reports = SchedulerView.get_daily_country_report(request)
-            # partners = SchedulerView.get_daily_partners(request)
-            # campaigns = SchedulerView.get_daily_campaigns(request)
+            advertisers = SchedulerView.get_daily_advertisers(request)
+            reports = SchedulerView.get_daily_report(request)
+            country_reports = SchedulerView.get_daily_country_report(request)
+            partners = SchedulerView.get_daily_partners(request)
+            campaigns = SchedulerView.get_daily_campaigns(request)
             airtable = SchedulerView.get_airtable_data(request)
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
@@ -562,21 +562,21 @@ class SchedulerView(APIView):
         return dt
 
     def get_airtable_data(self):
-        # print("-------------media_buyer start................")
-        # media_buyer = AirtableView.get_airtable_media_buyer_data()  # Get media_buyer_data from airtable api.
-        # new_media_buyer_response = AirtableView.save_media_buyer_into_db(media_buyer)
-        # if 'new_media_buyer_data' in new_media_buyer_response:
-        #     AirtableView.save_media_buyer_advertiser_into_db(new_media_buyer_response, media_buyer)
-        # print("-------------media_buyer end................")
+        print("-------------media_buyer start................")
+        media_buyer = AirtableView.get_airtable_media_buyer_data()  # Get media_buyer_data from airtable api.
+        new_media_buyer_response = AirtableView.save_media_buyer_into_db(media_buyer)
+        if 'new_media_buyer_data' in new_media_buyer_response:
+            AirtableView.save_media_buyer_advertiser_into_db(new_media_buyer_response, media_buyer)
+        print("-------------media_buyer end................")
         print("-------------verticals start................")
         vertical_data = AirtableView.get_airtable_verticals_data()
         new_vertical_response = AirtableView.save_verticals_data_into_db(vertical_data)
-        # if 'new_vertical_data' in new_vertical_response:
-        #     AirtableView.save_vertical_advertiser_ids_into_db(new_vertical_response, vertical_data)
+        if 'new_vertical_data' in new_vertical_response:
+            AirtableView.save_vertical_advertiser_ids_into_db(new_vertical_response, vertical_data)
         print("-------------verticals end................")
-        # print("-------------domain_data start................")
-        # domain_data = AirtableView.get_airtable_domains_data()
-        # print("domain_data---->", len(domain_data))
-        # domain_data_obj = AirtableView.save_domains_data_into_db(domain_data)
-        # AirtableView.save_advertiser_data_campaign_name(domain_data_obj)
-        # print("-------------domain_data end................")
+        print("-------------domain_data start................")
+        domain_data = AirtableView.get_airtable_domains_data()
+        print("domain_data---->", len(domain_data))
+        domain_data_obj = AirtableView.save_domains_data_into_db(domain_data)
+        AirtableView.save_advertiser_data_campaign_name(domain_data_obj)
+        print("-------------domain_data end................")
