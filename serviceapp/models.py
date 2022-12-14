@@ -67,6 +67,16 @@ class TiktokInfo(models.Model):
         db_table = "tiktok_info"
 
 
+class TiktokBC(models.Model):
+    bc_id = models.CharField(max_length=100, unique=True)
+    bc_info = models.JSONField(default=dict)
+    user_role = models.CharField(max_length=100, null=True)
+    ext_user_role = models.JSONField(default=dict)
+
+    class Meta:
+        db_table = "tiktok_bc"
+
+
 class Advertisers(models.Model):
     STATUS_CHOICE = (
         ('active', 'Active'),
