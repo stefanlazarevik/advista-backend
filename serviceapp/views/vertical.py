@@ -18,7 +18,7 @@ class VerticalView(APIView):
     def get_verticals(request):
         response = {}
         try:
-            query_filter = Q()
+            query_filter = Q(bc__contains=['PixelMind'])
             order_by = 'id'
             sort_by = False
             vertical_list = []
