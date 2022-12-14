@@ -90,13 +90,15 @@ class TonicSchedulerView(APIView):
         # camping_list = [i.campaign_id for i in data]
         return camping_list
 
-    def get_tonic_report(request, tonic_campaign_data=None):
+    def get_tonic_report(request, tonic_campaign_data=None, today=None):
         response = {}
         try:
             if "today" in request.GET:
                 timezone_date = request.GET.get('today')
             else:
                 timezone_date = TonicSchedulerView.convert_datetime_timezone("America/Los_Angeles")
+            if today:
+                timezone_date = today
             print(timezone_date)
             if tonic_campaign_data:
                 tonic_data = tonic_campaign_data

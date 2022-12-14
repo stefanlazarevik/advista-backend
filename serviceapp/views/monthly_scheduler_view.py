@@ -32,15 +32,15 @@ class MonthlySchedulerView(APIView):
 
                 for i in range(delta.days + 1):
                     day = start_date + timedelta(days=i)
-                    _mutable = request.GET._mutable
-                    request.GET._mutable = True
-                    request.GET['today'] = day.date()
-                    request.GET._mutable = False
+                    # _mutable = request.GET._mutable
+                    # request.GET._mutable = True
+                    # request.GET['today'] = day.date()
+                    # request.GET._mutable = False
                     print(day.date())
                     token = TonicSchedulerView.get_tonic_api_token(request)
                     tonic_data = get_tonic_daily_report(day.date(), token)
                     MonthlySchedulerView.get_daily_tonic_data(request, tonic_data, day.date())
-                    MonthlySchedulerView.get_scheduler_data(request, tonic_data)
+                    MonthlySchedulerView.get_scheduler_data(request, tonic_data, day.date())
                 response["success"] = True
             else:
                 response["success"] = False
@@ -97,12 +97,12 @@ class MonthlySchedulerView(APIView):
             response["message"] = str(e)
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
-    def get_scheduler_data(request, tonic_data):
+    def get_scheduler_data(request, tonic_data, timezone_date):
         response = {}
         try:
             print("scheduler start-----------")
             LogHelper.ex_time_init("start Tonic")
-            tonic_reports = TonicSchedulerView.get_tonic_report(request, tonic_data)
+            tonic_reports = TonicSchedulerView.get_tonic_report(request, tonic_data, timezone_date)
             LogHelper.ex_time()
             print("scheduler end-----------")
             response["success"] = True
