@@ -5,18 +5,21 @@ auth_key = 'DV69sEoVxUfNYoVIrl3Y'
 
 
 def get_system1_campaign_data(params):
-    days = params['days'] if 'days' in params else ''
-    campaign = params['campaign'] if 'campaign' in params else ''
-    url = BASE_URL + 'campaign.json'
-    params = {
-        'auth_key': auth_key,
-        'days': days,
-        'campaign': campaign
-    }
-    response = requests.get(url, params=params)
-    data = response.json()
+    data = {}
+    try:
+        days = params['days'] if 'days' in params else ''
+        campaign = params['campaign'] if 'campaign' in params else ''
+        url = BASE_URL + 'campaign.json'
+        params = {
+            'auth_key': auth_key,
+            'days': days,
+            'campaign': campaign
+        }
+        response = requests.get(url, params=params)
+        data = response.json()
+    except Exception as e:
+        return data
     return data
-
 
 # def get_subid_estimated_intraday():
 #     url = BASE_URL + 'subid_estimated_intraday.json?auth_key={}&days=2022-11-20'.format(auth_key)
