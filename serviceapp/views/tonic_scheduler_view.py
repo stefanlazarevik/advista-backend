@@ -90,15 +90,19 @@ class TonicSchedulerView(APIView):
         # camping_list = [i.campaign_id for i in data]
         return camping_list
 
-    def get_tonic_report(request):
+    def get_tonic_report(request, tonic_campaign_data=None):
         response = {}
         try:
-            token = TonicSchedulerView.get_tonic_api_token(request)
             if "today" in request.GET:
                 timezone_date = request.GET.get('today')
             else:
                 timezone_date = TonicSchedulerView.convert_datetime_timezone("America/Los_Angeles")
-            tonic_data = get_tonic_daily_report(timezone_date, token)
+            print(timezone_date)
+            if tonic_campaign_data:
+                tonic_data = tonic_campaign_data
+            else:
+                token = TonicSchedulerView.get_tonic_api_token(request)
+                tonic_data = get_tonic_daily_report(timezone_date, token)
             print("tonic data--->", len(tonic_data))
             campaign_list = TonicSchedulerView.user_campaning_list(request)
             set_campaign_id = TonicSchedulerView.update_tonic_campaign_id(request, campaign_list, tonic_data)
@@ -284,104 +288,108 @@ class TonicSchedulerView(APIView):
         return total_revenue
 
     def get_system1_campaign_revenue(self, date):
-        domains_data = Domains.objects.all().prefetch_related('advertiser_id')
-        result = {}
-        for i in domains_data:
-            data = i
-            domain = \
-                data.partner_url.replace('http://', '').replace("/", '').replace(":", "").replace("https", "").replace(
-                    "https://", '').split(
-                    "?rskey")[0] if data.partner_url else None
-            advertiser_id = data.advertiser_id.advertiser_id.strip() if data.advertiser_id else None
-            if domain:
-                if domain in result:
-                    print(domain)
-                else:
-                    result[domain] = {
-                        'advertiser_id': advertiser_id,
-                        'domain_id': data.domain_id
-                    }
-        # domain_list = list(result.keys())
-        # campaign = ','.join(domain_list)
-        params = {
-            'days': date,
-            # 'campaign': campaign
-        }
-        get_system1_campaign = get_system1_campaign_data(params)
-        print("size-of-system1-campaign-->", len(get_system1_campaign))
         system1_obj = {}
-        for i in get_system1_campaign[1:]:
-            try:
-                domain = i[1]
+        try:
+            domains_data = Domains.objects.all().prefetch_related('advertiser_id')
+            result = {}
+            for i in domains_data:
                 data = i
-                system1_data = {
-                    'report_date': date,
-                    'campaign': data[1],
-                    'total_sessions': data[2],
-                    'mobile_sessions': data[3],
-                    'desktop_sessions': data[4],
-                    'mobile_sessions_percentage': data[5],
-                    'distinct_ip': data[6],
-                    'distinct_mobile_ip': data[7],
-                    'distinct_desktop_ip': data[8],
-                    'distinct_mobile_ip_percentage': data[9],
-                    'searches': data[10],
-                    'clicks': data[11],
-                    'revenue': data[12],
-                    'revenue_per_session': data[13],
-                    'revenue_per_search': data[14],
-                    'revenue_per_ip': data[15],
-                    'revenue_per_click': data[16],
-                    'click_per_session_percentage': data[17],
-                    'advertiser_id': None,
-                }
+                domain = \
+                    data.partner_url.replace('http://', '').replace("/", '').replace(":", "").replace("https", "").replace(
+                        "https://", '').split(
+                        "?rskey")[0] if data.partner_url else None
+                advertiser_id = data.advertiser_id.advertiser_id.strip() if data.advertiser_id else None
                 if domain:
-                    search = i[10]
-                    revenue = i[12]
-                    clicks = i[11]
-                    revenue_per_click = i[16]
-                    revenue_per_session = i[13]
-                    revenue_per_search = i[14]
-                    revenue_per_ip = i[15]
-                    distinct_ip = data[6],
-                    distinct_mobile_ip = data[7],
-                    distinct_desktop_ip = data[8],
-                    if domain in system1_obj:
-                        system1_obj[domain]['distinct_ip'] = system1_obj[domain]['distinct_ip'] + distinct_ip
-                        system1_obj[domain]['distinct_mobile_ip'] = system1_obj[domain][
-                                                                        'distinct_mobile_ip'] + distinct_mobile_ip
-                        system1_obj[domain]['distinct_desktop_ip'] = system1_obj[domain][
-                                                                         'distinct_desktop_ip'] + distinct_mobile_ip
-
-                        system1_obj[domain]['revenue_per_ip'] = system1_obj[domain]['revenue_per_ip'] + float(
-                            revenue_per_ip)
-                        system1_obj[domain]['search'] = system1_obj[domain]['search'] + float(search)
-                        system1_obj[domain]['revenue'] = system1_obj[domain]['revenue'] + float(revenue)
-                        system1_obj[domain]['clicks'] = system1_obj[domain]['clicks'] + clicks
-                        system1_obj[domain]['revenue_per_session'] = system1_obj[domain]['revenue_per_session'] + float(
-                            revenue_per_session)
-                        system1_obj[domain]['revenue_per_search'] = system1_obj[domain]['revenue_per_search'] + float(
-                            revenue_per_search)
-                        system1_obj[domain]['revenue_per_click'] = system1_obj[domain]['revenue_per_click'] + float(
-                            revenue_per_click)
+                    if domain in result:
+                        print(domain)
                     else:
-                        system1_obj[domain] = system1_data
-            except Exception as e:
-                print(e)
-                continue
-        for i in system1_obj:
-            try:
-                if i in result:
-                    advertiser = result[i]['advertiser_id']
-                    system1_obj[i]['advertiser_id'] = advertiser
-                    system1_obj[i]['domain_id'] = result[i]['domain_id']
-                else:
-                    system1_obj[i]['domain_id'] = None
-            except Exception as e:
-                print("error-->", e)
-                continue
-        return system1_obj
+                        result[domain] = {
+                            'advertiser_id': advertiser_id,
+                            'domain_id': data.domain_id
+                        }
+            # domain_list = list(result.keys())
+            # campaign = ','.join(domain_list)
+            params = {
+                'days': date,
+                # 'campaign': campaign
+            }
+            get_system1_campaign = get_system1_campaign_data(params)
+            if get_system1_campaign:
+                print("size-of-system1-campaign-->", len(get_system1_campaign))
+                for i in get_system1_campaign[1:]:
+                    try:
+                        domain = i[1]
+                        data = i
+                        system1_data = {
+                            'report_date': date,
+                            'campaign': data[1],
+                            'total_sessions': data[2],
+                            'mobile_sessions': data[3],
+                            'desktop_sessions': data[4],
+                            'mobile_sessions_percentage': data[5],
+                            'distinct_ip': data[6],
+                            'distinct_mobile_ip': data[7],
+                            'distinct_desktop_ip': data[8],
+                            'distinct_mobile_ip_percentage': data[9],
+                            'searches': data[10],
+                            'clicks': data[11],
+                            'revenue': data[12],
+                            'revenue_per_session': data[13],
+                            'revenue_per_search': data[14],
+                            'revenue_per_ip': data[15],
+                            'revenue_per_click': data[16],
+                            'click_per_session_percentage': data[17],
+                            'advertiser_id': None,
+                        }
+                        if domain:
+                            search = i[10]
+                            revenue = i[12]
+                            clicks = i[11]
+                            revenue_per_click = i[16]
+                            revenue_per_session = i[13]
+                            revenue_per_search = i[14]
+                            revenue_per_ip = i[15]
+                            distinct_ip = data[6],
+                            distinct_mobile_ip = data[7],
+                            distinct_desktop_ip = data[8],
+                            if domain in system1_obj:
+                                system1_obj[domain]['distinct_ip'] = system1_obj[domain]['distinct_ip'] + distinct_ip
+                                system1_obj[domain]['distinct_mobile_ip'] = system1_obj[domain][
+                                                                                'distinct_mobile_ip'] + distinct_mobile_ip
+                                system1_obj[domain]['distinct_desktop_ip'] = system1_obj[domain][
+                                                                                 'distinct_desktop_ip'] + distinct_mobile_ip
 
+                                system1_obj[domain]['revenue_per_ip'] = system1_obj[domain]['revenue_per_ip'] + float(
+                                    revenue_per_ip)
+                                system1_obj[domain]['search'] = system1_obj[domain]['search'] + float(search)
+                                system1_obj[domain]['revenue'] = system1_obj[domain]['revenue'] + float(revenue)
+                                system1_obj[domain]['clicks'] = system1_obj[domain]['clicks'] + clicks
+                                system1_obj[domain]['revenue_per_session'] = system1_obj[domain]['revenue_per_session'] + float(
+                                    revenue_per_session)
+                                system1_obj[domain]['revenue_per_search'] = system1_obj[domain]['revenue_per_search'] + float(
+                                    revenue_per_search)
+                                system1_obj[domain]['revenue_per_click'] = system1_obj[domain]['revenue_per_click'] + float(
+                                    revenue_per_click)
+                            else:
+                                system1_obj[domain] = system1_data
+                    except Exception as e:
+                        print(e)
+                        continue
+                for i in system1_obj:
+                    try:
+                        if i in result:
+                            advertiser = result[i]['advertiser_id']
+                            system1_obj[i]['advertiser_id'] = advertiser
+                            system1_obj[i]['domain_id'] = result[i]['domain_id']
+                        else:
+                            system1_obj[i]['domain_id'] = None
+                    except Exception as e:
+                        print("error-->", e)
+                        continue
+            return system1_obj
+        except Exception as e:
+            LogHelper.efail(e)
+        return system1_obj
     def get_advertiser_system1_revenue(self, timezone_date):
         system1_revenue = System1Revenue.objects.values_list('advertiser_id', 'revenue').filter(
             report_date=timezone_date)
