@@ -18,12 +18,12 @@ class MonthlySchedulerView(APIView):
         start_date = None
         end_date = None
         try:
+            print("---------------Month Start--------------")
             if "start_date" in request.GET:
                 start_date = request.GET.get('start_date')
             if "end_date" in request.GET:
                 end_date = request.GET.get('end_date')
             if start_date and end_date:
-                print("---------------Month Start--------------")
                 start_date = datetime.strptime(start_date, '%Y-%m-%d')
                 end_date = datetime.strptime(end_date, '%Y-%m-%d')
                 # start_date = date(2008, 8, 15)
@@ -41,12 +41,12 @@ class MonthlySchedulerView(APIView):
                     tonic_data = get_tonic_daily_report(day.date(), token)
                     MonthlySchedulerView.get_daily_tonic_data(request, tonic_data, day.date())
                     MonthlySchedulerView.get_scheduler_data(request, tonic_data)
-                    print("---------------Month END--------------")
                 response["success"] = True
             else:
                 response["success"] = False
                 response["message"] = 'Enter start_date and end_date'
                 return Response(response, status=status.HTTP_400_BAD_REQUEST)
+            print("---------------Month END--------------")
             return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
             LogHelper.efail(e)
