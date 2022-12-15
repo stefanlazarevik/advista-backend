@@ -18,6 +18,7 @@ from serviceapp.views.helper import LogHelper, UserPermissions
 from datetime import datetime, timedelta, date
 from .airtable_api import AirtableView
 from serviceapp.views.tonic_api import get_access_token, get_tonic_daily_report
+from .manual_scheduler_view import ManualSchedulerView
 
 
 class SchedulerView(APIView):
@@ -26,6 +27,7 @@ class SchedulerView(APIView):
     def get_scheduler_data(request):
         response = {}
         try:
+            tiktok_bc = ManualSchedulerView.get_tiktok_bc(request)
             advertisers = SchedulerView.get_daily_advertisers(request)
             reports = SchedulerView.get_daily_report(request)
             country_reports = SchedulerView.get_daily_country_report(request)

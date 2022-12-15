@@ -8,7 +8,8 @@ from django.db.models import Sum, Count, Q
 from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from serviceapp.models import TiktokInfo, Advertisers, Reports, CountryReports, Partners, Campaigns, CampaignReports
+from serviceapp.models import TiktokInfo, Advertisers, Reports, CountryReports, Partners, Campaigns, CampaignReports, \
+    TiktokBC
 from rest_framework.decorators import api_view, permission_classes
 
 from serviceapp.serializers.report_serializer import CountryReportSerializer, DailyReportSerializer
@@ -26,6 +27,8 @@ class ManualSchedulerView(APIView):
         response = {}
         try:
             print("scheduler start-----------")
+            tiktok_bc = ManualSchedulerView.get_tiktok_bc(request)
+            print("tiktok end-----------")
             advertisers = ManualSchedulerView.get_daily_advertisers(request)
             print("advertisers end-----------")
             reports = ManualSchedulerView.get_daily_report(request)
@@ -591,3 +594,71 @@ class ManualSchedulerView(APIView):
         domain_data_obj = AirtableView.save_domains_data_into_db(domain_data)
         AirtableView.save_advertiser_data_campaign_name(domain_data_obj)
         print("-------------domain_data end................")
+
+    def get_tiktok_bc(self):
+        print("------------------start-get-bc-tiktok---------------")
+        try:
+            tiktok_bc_data = []
+            tiktok_info = TiktokInfo.objects.get(id=1)
+            access_token = tiktok_info.access_token
+            secret = tiktok_info.secret
+            app_id = tiktok_info.app_id
+            # Args in JSON format
+            path = "/bc/get/"
+            page_size = 50
+            my_args = "{\"access_token\": \"%s\", \"secret\": \"%s\", \"app_id\": \"%s\", \"page_size\":\"%s\"}" % (
+                access_token, secret, app_id, page_size)
+            tiktok_bc = tiktok_get(my_args, path, access_token)['data']
+            # total_items = tiktok_bc['page_info']['total_number']
+            total_page = tiktok_bc['page_info']['total_page']
+            current_page = tiktok_bc['page_info']['page']
+            for data in tiktok_bc['list']:
+                tiktok_bc_data.append(data)
+            while total_page != current_page:
+                print("page-->", current_page)
+                current_page = current_page + 1
+                my_args = "{\"access_token\": \"%s\", \"secret\": \"%s\", \"app_id\": \"%s\", \"page_size\":\"%s\",\"page\":\"%s\"}" % (
+                    access_token, secret, app_id, page_size, current_page)
+                tiktok_bc = tiktok_get(my_args, path, access_token)['data']
+                for data in tiktok_bc['list']:
+                    tiktok_bc_data.append(data)
+            print("tiktok_bc_data_size-->", len(tiktok_bc_data))
+            if tiktok_bc_data:
+                ManualSchedulerView.save_tiktok_bc_data(self, tiktok_bc_data)
+        except Exception as e:
+            LogHelper.efail(e)
+
+    def save_tiktok_bc_data(self, tiktok_bc_data):
+        try:
+            new_bc_data = []
+            update_bc_data = []
+            bc_ids = [bc['bc_info']['bc_id'] for bc in tiktok_bc_data]
+            existence_bc_ids = TiktokBC.objects.filter(bc_id__in=bc_ids).values_list('bc_id', flat=True)
+            new_bc_ids = list(set(bc_ids).difference(existence_bc_ids))
+            print("new_bc_ids_size-->", new_bc_ids)
+            for bc in tiktok_bc_data:
+                try:
+                    bc_id = bc['bc_info']['bc_id']
+                    if bc_id in new_bc_ids:
+                        new_bc_data.append(TiktokBC(bc_id=bc_id, bc_info=bc['bc_info'], user_role=bc['user_role'],
+                                                    ext_user_role=bc['ext_user_role']))
+                    else:
+                        tiktok_bc = TiktokBC.objects.filter(bc_id=bc_id).first()
+                        if tiktok_bc:
+                            update_bc_data.append(
+                                TiktokBC(pk=tiktok_bc.id, bc_info=bc['bc_info'], user_role=bc['user_role'],
+                                         ext_user_role=bc['ext_user_role']))
+                except Exception as e:
+                    LogHelper.efail(e)
+                    continue
+            if new_bc_data:
+                new_bc = TiktokBC.objects.bulk_create(new_bc_data, batch_size=100)
+                print("new_bc_create--->", len(new_bc))
+            if update_bc_data:
+                TiktokBC.objects.bulk_update(update_bc_data, ['bc_info', 'user_role', 'ext_user_role'],
+                                             batch_size=100)
+                return True
+
+        except Exception as e:
+            LogHelper.efail(e)
+            return False
