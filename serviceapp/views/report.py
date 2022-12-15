@@ -23,7 +23,13 @@ class ReportView(APIView):
         try:
             start_date = request.GET.get('start_date')
             end_date = request.GET.get('end_date')
-            reports = Reports.objects.filter(report_date__gte=start_date, report_date__lte=end_date).aggregate(Sum('spend'), Sum('clicks'),Sum('conversion'), Sum('impressions'), Sum('revenue'))
+            query_filter = Q()
+            query_filter &= Q(report_date__gte=start_date)
+            query_filter &= Q(report_date__lte=end_date)
+            if 'bc_id' in request.GET:
+                bc_id = request.GET.get('bc_id')
+                query_filter &= Q(advertiser_id__owner_bc_id=bc_id)
+            reports = Reports.objects.filter(query_filter).aggregate(Sum('spend'), Sum('clicks'),Sum('conversion'), Sum('impressions'), Sum('revenue'))
             total_conversions = reports['conversion__sum'] if reports['conversion__sum'] else 0
             total_cost = reports['spend__sum'] if reports['spend__sum'] else 0.0
             total_clicks = reports['clicks__sum'] if reports['clicks__sum'] else 0
@@ -58,12 +64,11 @@ class ReportView(APIView):
             else:
                 report["roi"] = 0.0
             # get country report
-            country_reports = CountryReports.objects.filter(report_date__gte=start_date,
-                                                            report_date__lte=end_date).values('country', 'country_code').annotate(
+            country_reports = CountryReports.objects.filter(query_filter).values('country', 'country_code').annotate(
                 total_cost=Sum('spend'), ).exclude(country=None).order_by('-total_cost')[:5]
             serializer = CountryReportSerializer(country_reports, many=True)
             # get Activity report
-            daily_reports = Reports.objects.filter(report_date__lte=end_date, report_date__gte=start_date).values(
+            daily_reports = Reports.objects.filter(query_filter).values(
                 'report_date').annotate(Count('advertiser_id', distinct=True), Sum('spend'), Sum('clicks'),
                                         Sum('conversion'), Sum('impressions'), Sum('revenue')).order_by('-report_date')
             report_serializer = DailyReportSerializer(daily_reports, many=True)

@@ -3,6 +3,7 @@ from django.conf.urls import url, include
 
 from .views.manual_scheduler_view import ManualSchedulerView
 from .views.scheduler_view import SchedulerView
+from .views.titkok_bc import BCView
 from .views.tonic_scheduler_view import TonicSchedulerView
 from .views.monthly_scheduler_view import MonthlySchedulerView
 from .views.users import UserViewSet, UserInfo
@@ -34,6 +35,7 @@ urlpatterns = [
                   url(r'^verticals/', VerticalView.get_verticals),
                   url(r'^generate-csv/', AdvertiserView.generate_csv),
                   url(r'^hello/', AdvertiserView.hello),
+                  url(r'^get-bc/', BCView.get_bc),
                   # url(r'^country-report/', CountryReportView.as_view()),
                   # url(r'^email-verification/', UserInfo.email_verification),
                   # url(r'^resend-verification-code/', UserInfo.resend_verification_code),

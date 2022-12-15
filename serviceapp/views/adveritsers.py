@@ -56,6 +56,9 @@ class AdvertiserView(APIView):
             if 'query' in request.GET:
                 name = request.GET.get('query')
                 query_filter &= Q(name__icontains=name)
+            if 'bc_id' in request.GET:
+                bc_id = request.GET.get('bc_id')
+                query_filter &= Q(owner_bc_id=bc_id)
             advertisers = Advertisers.objects.filter(query_filter).annotate(
                 total_cost=Sum('reports__spend'), clicks=Sum('reports__clicks'),
                 conversions=Sum('reports__conversion'), impressions=Sum('reports__impressions'), revenue=Sum('reports__revenue')).order_by("id")
