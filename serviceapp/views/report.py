@@ -5,7 +5,7 @@ from django.db.models import Sum, Count, Q
 from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from serviceapp.models import TiktokInfo, Advertisers, Reports, CountryReports
+from serviceapp.models import TiktokInfo, Advertisers, Reports, CountryReports, MediaBuyerAdvertiser, VerticalAdvertiser
 from rest_framework.decorators import api_view, permission_classes
 
 from serviceapp.serializers.report_serializer import CountryReportSerializer, DailyReportSerializer
@@ -63,6 +63,12 @@ class ReportView(APIView):
                 report["roi"] = round((report["profit"]/total_cost) * 100, 2)
             else:
                 report["roi"] = 0.0
+
+            # get media buyer report
+            media_buyer_report = ReportView.get_media_buyer_reports(request, start_date, end_date)
+
+            # get Vertical report
+            vertical_report = ReportView.get_vertical_reports(request, start_date, end_date)
             # get country report
             country_reports = CountryReports.objects.filter(query_filter).values('country', 'country_code').annotate(
                 total_cost=Sum('spend'), ).exclude(country=None).order_by('-total_cost')[:5]
@@ -75,7 +81,9 @@ class ReportView(APIView):
             response["data"] = {
                 "total_repots": report,
                 "country_repots": serializer.data,
-                "activity_reports": report_serializer.data
+                "activity_reports": report_serializer.data,
+                "media_buyer_reports": media_buyer_report,
+                "vertical_reports": vertical_report
             }
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
@@ -84,6 +92,134 @@ class ReportView(APIView):
             response["success"] = False
             response["message"] = str(e)
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_media_buyer_reports(request, start_date, end_date):
+        response = {}
+        try:
+            # reports = Reports.objects.filter(query_filter).aggregate(Sum('spend'), Sum('clicks'), Sum('conversion'),
+            #                                                          Sum('impressions'), Sum('revenue'))
+            query_filter = Q()
+            query_filter &= Q(advertiser_id__reports__report_date__gte=start_date)
+            query_filter &= Q(advertiser_id__reports__report_date__lte=end_date)
+            reports = MediaBuyerAdvertiser.objects.filter(query_filter).aggregate(
+                total_cost=Sum('advertiser_id__reports__spend'), clicks=Sum('advertiser_id__reports__clicks'),
+                conversions=Sum('advertiser_id__reports__conversion'), impressions=Sum('advertiser_id__reports__impressions'), revenue=Sum('advertiser_id__reports__revenue'))
+            total_conversions = reports['conversions'] if reports['conversions'] else 0
+            total_cost = reports['total_cost'] if reports['total_cost'] else 0.0
+            total_clicks = reports['clicks'] if reports['clicks'] else 0
+            total_impressions = reports['impressions'] if reports['impressions'] else 0
+            total_revenue = reports['revenue'] if reports['revenue'] else 0.0
+            report = {
+                "conversions": total_conversions,
+                "total_cost": round(total_cost, 2),
+                "clicks": total_clicks,
+                "impressions": total_impressions,
+                "revenue": round(total_revenue, 2)
+            }
+            if report['clicks'] != 0:
+                report['conversion_rate'] = round(report['conversions'] / (report['clicks'] / 100), 2)
+                report['cpc'] = round((report['total_cost'] / report['clicks']), 2)
+            else:
+                report['conversion_rate'] = 0
+                report['cpc'] = 0
+            if report['impressions'] != 0:
+                report['ctr'] = round((report['clicks'] / report['impressions']) * 100, 2)
+                report['cpm'] = round((report['total_cost'] / report['impressions']) * 1000, 2)
+            else:
+                report['ctr'] = 0
+                report['cpm'] = 0
+            if report['conversions'] != 0:
+                report['cpa'] = round((report['total_cost'] / report['conversions']), 2)
+            else:
+                report['cpa'] = 0
+            report["profit"] = round(total_revenue - total_cost, 2)
+            if total_cost > 0:
+                report["roi"] = round((report["profit"] / total_cost) * 100, 2)
+            else:
+                report["roi"] = 0.0
+            print(report)
+            response["success"] = True
+            return report
+        except Exception as e:
+            LogHelper.efail(e)
+            default_data = {
+                "conversions": 0,
+                "total_cost": 0.0,
+                "clicks": 0,
+                "impressions": 0,
+                "revenue": 0.0,
+                "conversion_rate": 0,
+                "cpc": 0,
+                "ctr": 0,
+                "cpm": 0,
+                "cpa": 0,
+                "profit": 0.0,
+                "roi": 0.0
+            }
+            return default_data
+
+    def get_vertical_reports(request, start_date, end_date):
+        response = {}
+        try:
+            query_filter = Q()
+            query_filter &= Q(advertiser_id__reports__report_date__gte=start_date)
+            query_filter &= Q(advertiser_id__reports__report_date__lte=end_date)
+            reports = VerticalAdvertiser.objects.filter(query_filter).aggregate(
+                total_cost=Sum('advertiser_id__reports__spend'), clicks=Sum('advertiser_id__reports__clicks'),
+                conversions=Sum('advertiser_id__reports__conversion'), impressions=Sum('advertiser_id__reports__impressions'), revenue=Sum('advertiser_id__reports__revenue'))
+            total_conversions = reports['conversions'] if reports['conversions'] else 0
+            total_cost = reports['total_cost'] if reports['total_cost'] else 0.0
+            total_clicks = reports['clicks'] if reports['clicks'] else 0
+            total_impressions = reports['impressions'] if reports['impressions'] else 0
+            total_revenue = reports['revenue'] if reports['revenue'] else 0.0
+            report = {
+                "conversions": total_conversions,
+                "total_cost": round(total_cost, 2),
+                "clicks": total_clicks,
+                "impressions": total_impressions,
+                "revenue": round(total_revenue, 2)
+            }
+            if report['clicks'] != 0:
+                report['conversion_rate'] = round(report['conversions'] / (report['clicks'] / 100), 2)
+                report['cpc'] = round((report['total_cost'] / report['clicks']), 2)
+            else:
+                report['conversion_rate'] = 0
+                report['cpc'] = 0
+            if report['impressions'] != 0:
+                report['ctr'] = round((report['clicks'] / report['impressions']) * 100, 2)
+                report['cpm'] = round((report['total_cost'] / report['impressions']) * 1000, 2)
+            else:
+                report['ctr'] = 0
+                report['cpm'] = 0
+            if report['conversions'] != 0:
+                report['cpa'] = round((report['total_cost'] / report['conversions']), 2)
+            else:
+                report['cpa'] = 0
+            report["profit"] = round(total_revenue - total_cost, 2)
+            if total_cost > 0:
+                report["roi"] = round((report["profit"] / total_cost) * 100, 2)
+            else:
+                report["roi"] = 0.0
+            print(report)
+            response["success"] = True
+            return report
+        except Exception as e:
+            LogHelper.efail(e)
+            default_data = {
+                "conversions": 0,
+                "total_cost": 0.0,
+                "clicks": 0,
+                "impressions": 0,
+                "revenue": 0.0,
+                "conversion_rate": 0,
+                "cpc": 0,
+                "ctr": 0,
+                "cpm": 0,
+                "cpa": 0,
+                "profit": 0.0,
+                "roi": 0.0
+            }
+            return default_data
 
     # @api_view(["get"])
     # @permission_classes([UserPermissions])

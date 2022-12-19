@@ -23,6 +23,7 @@ class TonicSchedulerView(APIView):
         create_tonic_data = []
         try:
             print("scheduler start-----------")
+            LogHelper.ilog("daily tonic data-----------")
             LogHelper.ex_time_init("start Tonic")
             if "today" in request.GET:
                 timezone_date = request.GET.get('today')

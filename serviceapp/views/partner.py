@@ -19,7 +19,8 @@ class PartnerView(APIView):
     def get_partners(request):
         response = {}
         try:
-            query_filter = Q(bc__contains=['PixelMind'])
+            query_filter = Q()
+            query_filter = Q(Q(bc__contains=['PixelMind']) | Q(bc__contains=['PixelMind USD']))
             order_by = 'id'
             sort_by = False
             media_buyer_list = []
