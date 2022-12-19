@@ -78,47 +78,69 @@ class AirtableView(APIView):
         media_buyer_ids = MediaBuyer.objects.values_list('media_buyer_id', flat=True).filter(
             media_buyer_id__in=requests_ids)
         new_media_buyer_ids = list(set(requests_ids).difference(media_buyer_ids))
-        existence_media_buyer = list(set(requests_ids).intersection(media_buyer_ids))
-        for i in new_media_buyer_ids:
-            data = media_buyer[i]
-            create_media_buyer.append(
-                MediaBuyer(media_buyer_id=data['media_buyer_id'], email=data['email'],
-                           name=data['name'], bc=data['bc']))
-        for i in existence_media_buyer:
+        print("new_media_buyer_ids", len(new_media_buyer_ids))
+        for i in media_buyer:
             try:
                 data = media_buyer[i]
-                media_buyer_obj = MediaBuyer.objects.get(media_buyer_id=data['media_buyer_id'])
-                update_media_buyer.append(
-                    MediaBuyer(pk=media_buyer_obj.id, email=data['email'], name=data['name'], bc=data['bc']))
+                id = data['media_buyer_id']
+                if id in new_media_buyer_ids:
+                    create_media_buyer.append(
+                        MediaBuyer(media_buyer_id=data['media_buyer_id'], email=data['email'],
+                                   name=data['name'], bc=data['bc']))
+                else:
+                    media_buyer_obj = MediaBuyer.objects.get(media_buyer_id=data['media_buyer_id'])
+                    update_media_buyer.append(
+                        MediaBuyer(pk=media_buyer_obj.id, email=data['email'], name=data['name'], bc=data['bc']))
             except Exception as e:
+                LogHelper.efail(e)
                 continue
         if create_media_buyer:
             rsp = MediaBuyer.objects.bulk_create(create_media_buyer, batch_size=100)
-            response['new_media_buyer_data'] = rsp
         if update_media_buyer:
             MediaBuyer.objects.bulk_update(update_media_buyer, ['email', 'name', 'bc'],
                                            batch_size=100)
         return response
 
     @staticmethod
-    def save_media_buyer_advertiser_into_db(new_media_buyer_response, media_buyer):
+    def save_media_buyer_advertiser_into_db(media_buyer):
+        new_ids = []
+        account_id_list = [i['advertiser_ids'] for i in media_buyer.values()]
+        for i in account_id_list:
+            media_buyer_accounts_ids = MediaBuyerAdvertiser.objects.filter(advertiser_id__in=i).values_list(
+                'advertiser_id', flat=True)
+            new_media_buyer_accounts_ids = list(set(i).difference(media_buyer_accounts_ids))
+            print("new_media_buyer_accounts_ids", len(new_media_buyer_accounts_ids))
+            for id in new_media_buyer_accounts_ids:
+                new_ids.append(id)
+        print(len(new_ids))
         new_media_buyer_advertiser = []
-        new_media_buyer_data = new_media_buyer_response['new_media_buyer_data']
-        for i in new_media_buyer_data:
-            media_buyer_id = i.media_buyer_id
+        update_media_buyer_advertiser = []
+        for i in media_buyer:
             try:
-                if media_buyer[media_buyer_id]:
-                    advertiser_ids = media_buyer[media_buyer_id]['advertiser_ids']
-                    if advertiser_ids:
-                        for advertiser_id in advertiser_ids:
-                            advertiser_obj = Advertisers.objects.get(advertiser_id=advertiser_id)
+                data = media_buyer[i]
+                media_buyer_id = data['media_buyer_id']
+                account_ids = data['advertiser_ids']
+                for id in account_ids:
+                    advertiser_obj = Advertisers.objects.filter(advertiser_id=id).first()
+                    media_buyer_obj = MediaBuyer.objects.filter(media_buyer_id=media_buyer_id).first()
+                    if advertiser_obj:
+                        if id in new_ids:
                             new_media_buyer_advertiser.append(
-                                MediaBuyerAdvertiser(media_buyer_id=i, advertiser_id=advertiser_obj))
+                                MediaBuyerAdvertiser(media_buyer_id=media_buyer_obj, advertiser_id=advertiser_obj))
+                        else:
+                            if media_buyer:
+                                update_media_buyer_advertiser.append(
+                                    MediaBuyerAdvertiser(pk=media_buyer_obj.id, advertiser_id=advertiser_obj))
             except Exception as e:
-                print(e)
+                LogHelper.efail(e)
                 continue
+        print('new_media_buyer_advertiser_size--->', len(new_media_buyer_advertiser))
         if new_media_buyer_advertiser:
-            MediaBuyerAdvertiser.objects.bulk_create(new_media_buyer_advertiser, batch_size=100)
+            MediaBuyerAdvertiser.objects.bulk_create(new_media_buyer_advertiser, batch_size=1000)
+        print('update_media_buyer_advertiser_size--->', len(update_media_buyer_advertiser))
+        if update_media_buyer_advertiser:
+            MediaBuyerAdvertiser.objects.bulk_update(update_media_buyer_advertiser, ['advertiser_id'],
+                                                             batch_size=1000)
         return True
 
     @staticmethod

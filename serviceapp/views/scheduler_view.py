@@ -566,9 +566,9 @@ class SchedulerView(APIView):
     def get_airtable_data(self):
         print("-------------media_buyer start................")
         media_buyer = AirtableView.get_airtable_media_buyer_data()  # Get media_buyer_data from airtable api.
+        print("total media_buyer-->", len(media_buyer))
         new_media_buyer_response = AirtableView.save_media_buyer_into_db(media_buyer)
-        if 'new_media_buyer_data' in new_media_buyer_response:
-            AirtableView.save_media_buyer_advertiser_into_db(new_media_buyer_response, media_buyer)
+        AirtableView.save_media_buyer_advertiser_into_db(media_buyer)
         print("-------------media_buyer end................")
         print("-------------verticals start................")
         vertical_data = AirtableView.get_airtable_verticals_data()
@@ -578,7 +578,6 @@ class SchedulerView(APIView):
         print("-------------verticals end................")
         print("-------------domain_data start................")
         domain_data = AirtableView.get_airtable_domains_data()
-        print("domain_data---->", len(domain_data))
         domain_data_obj = AirtableView.save_domains_data_into_db(domain_data)
         AirtableView.save_advertiser_data_campaign_name(domain_data_obj)
         print("-------------domain_data end................")
