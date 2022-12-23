@@ -47,25 +47,31 @@ class PartnerView(APIView):
                 media_advertiser = MediaBuyerAdvertiser.objects.filter(report_filter).aggregate(
                 total_cost=Sum('advertiser_id__reports__spend'), clicks=Sum('advertiser_id__reports__clicks'),
                 conversions=Sum('advertiser_id__reports__conversion'), impressions=Sum('advertiser_id__reports__impressions'), revenue=Sum('advertiser_id__reports__revenue'))
-                media_buyer_data['conversion_rate'] = MediaAdvertiserCalculateView.get_conversion_rate(request, media_advertiser)
-                media_buyer_data['total_cost'] = MediaAdvertiserCalculateView.get_total_cost(request, media_advertiser)
-                media_buyer_data['clicks'] = media_advertiser['clicks']
-                media_buyer_data['conversions'] = media_advertiser['conversions']
-                media_buyer_data['impressions'] = media_advertiser['impressions']
-                media_buyer_data['ctr'] = MediaAdvertiserCalculateView.get_ctr(request, media_advertiser)
-                media_buyer_data['cpm'] = MediaAdvertiserCalculateView.get_cpm(request, media_advertiser)
-                media_buyer_data['cpc'] = MediaAdvertiserCalculateView.get_cpc(request, media_advertiser)
-                media_buyer_data['cpa'] = MediaAdvertiserCalculateView.get_cpa(request, media_advertiser)
-                media_buyer_data['revenue'] = MediaAdvertiserCalculateView.get_revenue(request, media_advertiser)
-                media_buyer_data['profit'] = MediaAdvertiserCalculateView.get_profit(request, media_advertiser)
-                media_buyer_data['roi'] = MediaAdvertiserCalculateView.get_roi(request, media_advertiser)
-                media_buyer_list.append(media_buyer_data)
+                if (media_advertiser['total_cost'] and media_advertiser['total_cost'] > 0) or (
+                        media_advertiser['impressions'] and media_advertiser['impressions'] > 0) or (
+                        media_advertiser['revenue'] and media_advertiser['revenue'] > 0):
+                    media_buyer_data['conversion_rate'] = MediaAdvertiserCalculateView.get_conversion_rate(request, media_advertiser)
+                    media_buyer_data['total_cost'] = MediaAdvertiserCalculateView.get_total_cost(request, media_advertiser)
+                    media_buyer_data['clicks'] = media_advertiser['clicks']
+                    media_buyer_data['conversions'] = media_advertiser['conversions']
+                    media_buyer_data['impressions'] = media_advertiser['impressions']
+                    media_buyer_data['ctr'] = MediaAdvertiserCalculateView.get_ctr(request, media_advertiser)
+                    media_buyer_data['cpm'] = MediaAdvertiserCalculateView.get_cpm(request, media_advertiser)
+                    media_buyer_data['cpc'] = MediaAdvertiserCalculateView.get_cpc(request, media_advertiser)
+                    media_buyer_data['cpa'] = MediaAdvertiserCalculateView.get_cpa(request, media_advertiser)
+                    media_buyer_data['revenue'] = MediaAdvertiserCalculateView.get_revenue(request, media_advertiser)
+                    media_buyer_data['profit'] = MediaAdvertiserCalculateView.get_profit(request, media_advertiser)
+                    media_buyer_data['roi'] = MediaAdvertiserCalculateView.get_roi(request, media_advertiser)
+                    media_buyer_list.append(media_buyer_data)
             new_sorted_list = sorted(media_buyer_list, key=lambda d: d[order_by], reverse=sort_by)
-            paginator = CustomPagination()
-            result_page = paginator.paginate_queryset(new_sorted_list, request)
-            response["success"] = True
-            response["data"] = result_page
-            return paginator.get_paginated_response(data=response)
+            # paginator = CustomPagination()
+            # result_page = paginator.paginate_queryset(new_sorted_list, request)
+            response["results"] = {
+                "success": True,
+                "data": new_sorted_list
+            }
+            return Response(response, status=status.HTTP_200_OK)
+            # return paginator.get_paginated_response(data=response)
         except Exception as e:
             LogHelper.efail(e)
             response["success"] = False

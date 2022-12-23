@@ -18,7 +18,7 @@ class VerticalView(APIView):
     def get_verticals(request):
         response = {}
         try:
-            query_filter = Q(bc__contains=['PixelMind'])
+            query_filter = Q(Q(bc__contains=['PixelMind']) | Q(bc__contains=['PixelMind USD']))
             order_by = 'id'
             sort_by = False
             vertical_list = []
@@ -47,27 +47,31 @@ class VerticalView(APIView):
                     conversions=Sum('advertiser_id__reports__conversion'),
                     impressions=Sum('advertiser_id__reports__impressions'),
                     revenue=Sum('advertiser_id__reports__revenue'))
-                vertical_data['conversion_rate'] = MediaAdvertiserCalculateView.get_conversion_rate(request,
-                                                                                                       vertical_advertiser)
-                vertical_data['total_cost'] = MediaAdvertiserCalculateView.get_total_cost(request, vertical_advertiser)
-                vertical_data['clicks'] = vertical_advertiser['clicks']
-                vertical_data['conversions'] = vertical_advertiser['conversions']
-                vertical_data['impressions'] = vertical_advertiser['impressions']
-                vertical_data['name'] = vertical_data['details']['name']
-                vertical_data['ctr'] = MediaAdvertiserCalculateView.get_ctr(request, vertical_advertiser)
-                vertical_data['cpm'] = MediaAdvertiserCalculateView.get_cpm(request, vertical_advertiser)
-                vertical_data['cpc'] = MediaAdvertiserCalculateView.get_cpc(request, vertical_advertiser)
-                vertical_data['cpa'] = MediaAdvertiserCalculateView.get_cpa(request, vertical_advertiser)
-                vertical_data['revenue'] = MediaAdvertiserCalculateView.get_revenue(request, vertical_advertiser)
-                vertical_data['profit'] = MediaAdvertiserCalculateView.get_profit(request, vertical_advertiser)
-                vertical_data['roi'] = MediaAdvertiserCalculateView.get_roi(request, vertical_advertiser)
-                vertical_list.append(vertical_data)
+                if (vertical_advertiser['total_cost'] and vertical_advertiser['total_cost'] > 0) or (vertical_advertiser['impressions'] and vertical_advertiser['impressions'] > 0) or (vertical_advertiser['revenue'] and vertical_advertiser['revenue'] > 0):
+                    vertical_data['conversion_rate'] = MediaAdvertiserCalculateView.get_conversion_rate(request,
+                                                                                                           vertical_advertiser)
+                    vertical_data['total_cost'] = MediaAdvertiserCalculateView.get_total_cost(request, vertical_advertiser)
+                    vertical_data['clicks'] = vertical_advertiser['clicks']
+                    vertical_data['conversions'] = vertical_advertiser['conversions']
+                    vertical_data['impressions'] = vertical_advertiser['impressions']
+                    vertical_data['name'] = vertical_data['details']['name']
+                    vertical_data['ctr'] = MediaAdvertiserCalculateView.get_ctr(request, vertical_advertiser)
+                    vertical_data['cpm'] = MediaAdvertiserCalculateView.get_cpm(request, vertical_advertiser)
+                    vertical_data['cpc'] = MediaAdvertiserCalculateView.get_cpc(request, vertical_advertiser)
+                    vertical_data['cpa'] = MediaAdvertiserCalculateView.get_cpa(request, vertical_advertiser)
+                    vertical_data['revenue'] = MediaAdvertiserCalculateView.get_revenue(request, vertical_advertiser)
+                    vertical_data['profit'] = MediaAdvertiserCalculateView.get_profit(request, vertical_advertiser)
+                    vertical_data['roi'] = MediaAdvertiserCalculateView.get_roi(request, vertical_advertiser)
+                    vertical_list.append(vertical_data)
             new_sorted_list = sorted(vertical_list, key=lambda d: d[order_by], reverse=sort_by)
-            paginator = CustomPagination()
-            result_page = paginator.paginate_queryset(new_sorted_list, request)
-            response["success"] = True
-            response["data"] = result_page
-            return paginator.get_paginated_response(data=response)
+            # paginator = CustomPagination()
+            # result_page = paginator.paginate_queryset(new_sorted_list, request)
+            response["results"] = {
+                "success": True,
+                "data": new_sorted_list
+            }
+            return Response(response, status=status.HTTP_200_OK)
+            # return paginator.get_paginated_response(data=response)
         except Exception as e:
             LogHelper.efail(e)
             response["success"] = False

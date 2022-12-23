@@ -61,7 +61,7 @@ class AdvertiserView(APIView):
                 query_filter &= Q(owner_bc_id=bc_id)
             advertisers = Advertisers.objects.filter(query_filter).annotate(
                 total_cost=Sum('reports__spend'), clicks=Sum('reports__clicks'),
-                conversions=Sum('reports__conversion'), impressions=Sum('reports__impressions'), revenue=Sum('reports__revenue')).order_by("id")
+                conversions=Sum('reports__conversion'), impressions=Sum('reports__impressions'), revenue=Sum('reports__revenue')).order_by("id").exclude(total_cost=0, impressions=0, revenue=0)
             for advertiser in advertisers:
                 advertiser.status = AdvertiserCalculateView.get_status(request, advertiser)
                 advertiser.conversion_rate = AdvertiserCalculateView.get_conversion_rate(request, advertiser)
@@ -75,11 +75,14 @@ class AdvertiserView(APIView):
                 advertiser.roi = AdvertiserCalculateView.get_roi(request, advertiser)
                 advertiser_list.append(AdvertiserSerializer(advertiser).data)
             new_sorted_list = sorted(advertiser_list, key=lambda d: d[order_by], reverse=sort_by)
-            paginator = CustomPagination()
-            result_page = paginator.paginate_queryset(new_sorted_list, request)
-            response["success"] = True
-            response["data"] = result_page
-            return paginator.get_paginated_response(data=response)
+            # paginator = CustomPagination()
+            # result_page = paginator.paginate_queryset(new_sorted_list, request)
+            response["results"] = {
+                "success": True,
+                "data": new_sorted_list
+            }
+            return Response(response, status=status.HTTP_200_OK)
+            # return paginator.get_paginated_response(data=response)
         except Exception as e:
             LogHelper.efail(e)
             response["success"] = False
