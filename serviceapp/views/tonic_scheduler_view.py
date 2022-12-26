@@ -1,4 +1,5 @@
 import json
+import re
 
 from pytz import timezone
 from django.db.models import Sum, Count, Q
@@ -265,7 +266,7 @@ class TonicSchedulerView(APIView):
         }
         revenue_list = {}
         for i in tonic_data:
-            if i['subid1'] is None:
+            if i['subid1'] is None or TonicSchedulerView.check_campaign_id_validation(self, i['subid1']) == False:
                 if i['campaign_name'] in (list(advertisers_list.keys())):
                     advertiser_id = advertisers_list[i['campaign_name']]
                     revenue = i['revenueUsd']
@@ -411,3 +412,7 @@ class TonicSchedulerView(APIView):
         if update_list:
             print("update-report-table", len(update_list))
             Reports.objects.bulk_update(update_list, ['revenue'], batch_size=100)
+
+    def check_campaign_id_validation(self, campaign_id):
+        match = re.fullmatch(r"^\d{1,16}$", campaign_id)
+        return bool(match)
