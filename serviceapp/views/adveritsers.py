@@ -1,10 +1,11 @@
 import json
 
+from datetime import datetime, timedelta
 from django.db.models import Sum, Q, F, Case, When, Value, FloatField, ExpressionWrapper
 from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from serviceapp.models import TiktokInfo, Advertisers
+from serviceapp.models import TiktokInfo, Advertisers, TonicCampaignReports, System1Revenue, Reports
 from rest_framework.decorators import api_view, permission_classes
 
 from serviceapp.serializers.adveriser_serializer import AdvertiserSerializer, AdvertiserCSVSerializer
@@ -129,6 +130,45 @@ class AdvertiserView(APIView):
             response["success"] = False
             response["message"] = str(e)
             return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
+    @api_view(["get"])
+    def save_reports_revenue(request):
+        response = {}
+        try:
+            advertisers = Advertisers.objects.all()
+
+            if "start_date" in request.GET:
+                start_date = request.GET.get('start_date')
+            if "end_date" in request.GET:
+                end_date = request.GET.get('end_date')
+            if start_date and end_date:
+                start_date = datetime.strptime(start_date, '%Y-%m-%d')
+                end_date = datetime.strptime(end_date, '%Y-%m-%d')
+                delta = end_date - start_date  # returns timedelta
+
+                for i in range(delta.days + 1):
+                    day = start_date + timedelta(days=i)
+                    print(day)
+                    for advertiser in advertisers:
+                        total_revenue = 0
+                        if advertiser.tonic_campaign_name:
+                            campaign_name = advertiser.tonic_campaign_name.split("-")[0]
+                            tonic_revenue = TonicCampaignReports.objects.filter(tonic_campaign_name__contains=campaign_name, report_date=day).aggregate(total_revenue=Sum('revenue'))
+                            if tonic_revenue['total_revenue']:
+                                total_revenue = total_revenue + tonic_revenue['total_revenue']
+                            system1_revenue = System1Revenue.objects.filter(advertiser_id=advertiser, report_date=day).aggregate(total_revenue=Sum('revenue'))
+                            if system1_revenue['total_revenue']:
+                                total_revenue = total_revenue + system1_revenue['total_revenue']
+                            total_revenue = round(total_revenue, 2)
+                            Reports.objects.filter(advertiser_id=advertiser, report_date=day).update(revenue=total_revenue)
+            response["success"] = True
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            LogHelper.efail(e)
+            response["success"] = False
+            response["message"] = str(e)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
+
 
     # @api_view(["get"])
     # def generate_ad_csv(request):

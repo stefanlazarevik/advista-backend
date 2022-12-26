@@ -35,6 +35,7 @@ urlpatterns = [
                   url(r'^verticals/', VerticalView.get_verticals),
                   url(r'^generate-csv/', AdvertiserView.generate_csv),
                   url(r'^hello/', AdvertiserView.hello),
+                  url(r'^update-report/', AdvertiserView.save_reports_revenue),
                   url(r'^get-bc/', BCView.get_bc),
                   # url(r'^country-report/', CountryReportView.as_view()),
                   # url(r'^email-verification/', UserInfo.email_verification),
