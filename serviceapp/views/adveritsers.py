@@ -159,8 +159,9 @@ class AdvertiserView(APIView):
                             system1_revenue = System1Revenue.objects.filter(advertiser_id=advertiser, report_date=day).aggregate(total_revenue=Sum('revenue'))
                             if system1_revenue['total_revenue']:
                                 total_revenue = total_revenue + system1_revenue['total_revenue']
-                            total_revenue = round(total_revenue, 2)
-                            Reports.objects.filter(advertiser_id=advertiser, report_date=day).update(revenue=total_revenue)
+                            if total_revenue > 0:
+                                total_revenue = round(total_revenue, 2)
+                                Reports.objects.filter(advertiser_id=advertiser, report_date=day).exclude(advertiser_id=advertiser, report_date=day, revenue=total_revenue).update(revenue=total_revenue)
             response["success"] = True
             return Response(response, status=status.HTTP_200_OK)
         except Exception as e:
