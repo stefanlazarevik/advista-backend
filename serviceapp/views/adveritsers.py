@@ -78,9 +78,56 @@ class AdvertiserView(APIView):
             new_sorted_list = sorted(advertiser_list, key=lambda d: d[order_by], reverse=sort_by)
             # paginator = CustomPagination()
             # result_page = paginator.paginate_queryset(new_sorted_list, request)
+            # Total reports
+            report_filter = Q()
+            report_filter &= Q(report_date__gte=start_date)
+            report_filter &= Q(report_date__lte=end_date)
+            if 'query' in request.GET:
+                name = request.GET.get('query')
+                report_filter &= Q(advertiser_id__name__icontains=name)
+            if 'bc_id' in request.GET:
+                bc_id = request.GET.get('bc_id')
+                report_filter &= Q(advertiser_id__owner_bc_id=bc_id)
+            reports = Reports.objects.filter(report_filter).aggregate(Sum('spend'), Sum('clicks'), Sum('conversion'),
+                                                                     Sum('impressions'), Sum('revenue'))
+            total_conversions = reports['conversion__sum'] if reports['conversion__sum'] else 0
+            total_cost = reports['spend__sum'] if reports['spend__sum'] else 0.0
+            total_clicks = reports['clicks__sum'] if reports['clicks__sum'] else 0
+            total_impressions = reports['impressions__sum'] if reports['impressions__sum'] else 0
+            total_revenue = reports['revenue__sum'] if reports['revenue__sum'] else 0.0
+            report = {
+                "conversions": total_conversions,
+                "total_cost": round(total_cost, 2),
+                "clicks": total_clicks,
+                "impressions": total_impressions,
+                "revenue": round(total_revenue, 2)
+            }
+            if report['clicks'] != 0:
+                report['conversion_rate'] = round(report['conversions'] / (report['clicks'] / 100), 2)
+                report['cpc'] = round((report['total_cost'] / report['clicks']), 2)
+            else:
+                report['conversion_rate'] = 0
+                report['cpc'] = 0
+            if report['impressions'] != 0:
+                report['ctr'] = round((report['clicks'] / report['impressions']) * 100, 2)
+                report['cpm'] = round((report['total_cost'] / report['impressions']) * 1000, 2)
+            else:
+                report['ctr'] = 0
+                report['cpm'] = 0
+            if report['conversions'] != 0:
+                report['cpa'] = round((report['total_cost'] / report['conversions']), 2)
+            else:
+                report['cpa'] = 0
+            report["profit"] = round(total_revenue - total_cost, 2)
+            if total_cost > 0:
+                report["roi"] = round((report["profit"] / total_cost) * 100, 2)
+            else:
+                report["roi"] = 0.0
+
             response["results"] = {
                 "success": True,
-                "data": new_sorted_list
+                "data": new_sorted_list,
+                "total_reports": report
             }
             return Response(response, status=status.HTTP_200_OK)
             # return paginator.get_paginated_response(data=response)
