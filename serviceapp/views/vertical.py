@@ -9,6 +9,7 @@ from rest_framework.decorators import api_view, permission_classes
 
 from serviceapp.serializers.partner_serializer import VerticalSerializer
 from serviceapp.views.helper import LogHelper, UserPermissions, CustomPagination, MediaAdvertiserCalculateView
+from serviceapp.views.report import ReportView
 
 
 class VerticalView(APIView):
@@ -66,9 +67,12 @@ class VerticalView(APIView):
             new_sorted_list = sorted(vertical_list, key=lambda d: d[order_by], reverse=sort_by)
             # paginator = CustomPagination()
             # result_page = paginator.paginate_queryset(new_sorted_list, request)
+            # get Vertical report
+            vertical_report = ReportView.get_vertical_reports(request, start_date, end_date)
             response["results"] = {
                 "success": True,
-                "data": new_sorted_list
+                "data": new_sorted_list,
+                "vertical_report": vertical_report
             }
             return Response(response, status=status.HTTP_200_OK)
             # return paginator.get_paginated_response(data=response)

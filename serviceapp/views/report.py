@@ -101,6 +101,9 @@ class ReportView(APIView):
             query_filter = Q()
             query_filter &= Q(advertiser_id__reports__report_date__gte=start_date)
             query_filter &= Q(advertiser_id__reports__report_date__lte=end_date)
+            if 'query' in request.GET:
+                name = request.GET.get('query')
+                query_filter &= Q(media_buyer_id__name__icontains=name)
             reports = MediaBuyerAdvertiser.objects.filter(query_filter).aggregate(
                 total_cost=Sum('advertiser_id__reports__spend'), clicks=Sum('advertiser_id__reports__clicks'),
                 conversions=Sum('advertiser_id__reports__conversion'), impressions=Sum('advertiser_id__reports__impressions'), revenue=Sum('advertiser_id__reports__revenue'))
@@ -164,6 +167,9 @@ class ReportView(APIView):
             query_filter = Q()
             query_filter &= Q(advertiser_id__reports__report_date__gte=start_date)
             query_filter &= Q(advertiser_id__reports__report_date__lte=end_date)
+            if 'query' in request.GET:
+                name = request.GET.get('query')
+                query_filter &= Q(vertical_id__details__name__icontains=name)
             reports = VerticalAdvertiser.objects.filter(query_filter).aggregate(
                 total_cost=Sum('advertiser_id__reports__spend'), clicks=Sum('advertiser_id__reports__clicks'),
                 conversions=Sum('advertiser_id__reports__conversion'), impressions=Sum('advertiser_id__reports__impressions'), revenue=Sum('advertiser_id__reports__revenue'))

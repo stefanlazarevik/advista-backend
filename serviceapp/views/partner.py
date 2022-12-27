@@ -8,6 +8,7 @@ from serviceapp.models import TiktokInfo, MediaBuyer, MediaBuyerAdvertiser
 from rest_framework.decorators import api_view, permission_classes
 
 from serviceapp.serializers.partner_serializer import PartnerSerializer
+from serviceapp.views.report import ReportView
 from serviceapp.views.tiktok_api import tiktok_get
 from serviceapp.views.helper import LogHelper, UserPermissions, CustomPagination, MediaAdvertiserCalculateView
 
@@ -66,9 +67,12 @@ class PartnerView(APIView):
             new_sorted_list = sorted(media_buyer_list, key=lambda d: d[order_by], reverse=sort_by)
             # paginator = CustomPagination()
             # result_page = paginator.paginate_queryset(new_sorted_list, request)
+            # get media buyer report
+            media_buyer_report = ReportView.get_media_buyer_reports(request, start_date, end_date)
             response["results"] = {
                 "success": True,
-                "data": new_sorted_list
+                "data": new_sorted_list,
+                "media_buyer_report": media_buyer_report
             }
             return Response(response, status=status.HTTP_200_OK)
             # return paginator.get_paginated_response(data=response)
