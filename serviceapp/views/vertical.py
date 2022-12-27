@@ -72,7 +72,7 @@ class VerticalView(APIView):
             response["results"] = {
                 "success": True,
                 "data": new_sorted_list,
-                "vertical_report": vertical_report
+                "vertical_reports": vertical_report
             }
             return Response(response, status=status.HTTP_200_OK)
             # return paginator.get_paginated_response(data=response)

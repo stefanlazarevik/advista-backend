@@ -72,7 +72,7 @@ class PartnerView(APIView):
             response["results"] = {
                 "success": True,
                 "data": new_sorted_list,
-                "media_buyer_report": media_buyer_report
+                "media_buyer_reports": media_buyer_report
             }
             return Response(response, status=status.HTTP_200_OK)
             # return paginator.get_paginated_response(data=response)
