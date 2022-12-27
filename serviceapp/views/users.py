@@ -1,6 +1,7 @@
 import random
 import string
 
+from django.db.models import Q
 from rest_framework.permissions import BasePermission
 from rest_framework import viewsets, status, mixins
 from rest_framework.views import APIView
@@ -53,6 +54,29 @@ class UserViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.UpdateM
         # queryset = Users.objects.filter(is_verified=True).exclude(id=self.request.user.id).order_by('-id')
         queryset = Users.objects.all().exclude(id=self.request.user.id).order_by('-id')
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        response = {}
+        try:
+            query_filter = Q()
+            if 'query' in request.GET:
+                name = request.GET.get('query')
+                query_filter &= Q(Q(username__icontains=name) | Q(first_name__icontains=name) | Q(last_name__icontains=name) | Q(email__icontains=name))
+            # queryset = self.filter_queryset(self.get_queryset())
+            queryset = Users.objects.filter(query_filter).exclude(id=self.request.user.id).order_by('-id')
+            # page = self.paginate_queryset(queryset)
+            # if page is not None:
+            #     serializer = self.get_serializer(page, many=True)
+            #     return self.get_paginated_response(serializer.data)
+
+            serializer = self.get_serializer(queryset, many=True)
+            response["results"] = serializer.data
+            return Response(response, status=status.HTTP_200_OK)
+        except Exception as e:
+            LogHelper.efail(e)
+            response["success"] = False
+            response["message"] = str(e)
+            return Response(response, status=status.HTTP_400_BAD_REQUEST)
 
     def create(self, request, *args, **kwargs):
         with transaction.atomic():
