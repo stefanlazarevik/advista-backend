@@ -29,7 +29,8 @@ class ReportView(APIView):
             if 'bc_id' in request.GET:
                 bc_id = request.GET.get('bc_id')
                 query_filter &= Q(advertiser_id__owner_bc_id=bc_id)
-            reports = Reports.objects.filter(query_filter).aggregate(Sum('spend'), Sum('clicks'),Sum('conversion'), Sum('impressions'), Sum('revenue'))
+            reports = Reports.objects.filter(query_filter).aggregate(Sum('spend'), Sum('clicks'), Sum('conversion'),
+                                                                     Sum('impressions'), Sum('revenue'))
             total_conversions = reports['conversion__sum'] if reports['conversion__sum'] else 0
             total_cost = reports['spend__sum'] if reports['spend__sum'] else 0.0
             total_clicks = reports['clicks__sum'] if reports['clicks__sum'] else 0
@@ -43,7 +44,7 @@ class ReportView(APIView):
                 "revenue": round(total_revenue, 2)
             }
             if report['clicks'] != 0:
-                report['conversion_rate'] = round(report['conversions']/(report['clicks']/100), 2)
+                report['conversion_rate'] = round(report['conversions'] / (report['clicks'] / 100), 2)
                 report['cpc'] = round((report['total_cost'] / report['clicks']), 2)
             else:
                 report['conversion_rate'] = 0
@@ -60,7 +61,7 @@ class ReportView(APIView):
                 report['cpa'] = 0
             report["profit"] = round(total_revenue - total_cost, 2)
             if total_cost > 0:
-                report["roi"] = round((report["profit"]/total_cost) * 100, 2)
+                report["roi"] = round((report["profit"] / total_cost) * 100, 2)
             else:
                 report["roi"] = 0.0
 
@@ -99,14 +100,24 @@ class ReportView(APIView):
             # reports = Reports.objects.filter(query_filter).aggregate(Sum('spend'), Sum('clicks'), Sum('conversion'),
             #                                                          Sum('impressions'), Sum('revenue'))
             query_filter = Q()
-            query_filter &= Q(advertiser_id__reports__report_date__gte=start_date)
-            query_filter &= Q(advertiser_id__reports__report_date__lte=end_date)
+            report_filter = Q()
+            report_filter &= Q(report_date__gte=start_date)
+            report_filter &= Q(report_date__lte=end_date)
             if 'query' in request.GET:
                 name = request.GET.get('query')
                 query_filter &= Q(media_buyer_id__name__icontains=name)
-            reports = MediaBuyerAdvertiser.objects.filter(query_filter).aggregate(
-                total_cost=Sum('advertiser_id__reports__spend'), clicks=Sum('advertiser_id__reports__clicks'),
-                conversions=Sum('advertiser_id__reports__conversion'), impressions=Sum('advertiser_id__reports__impressions'), revenue=Sum('advertiser_id__reports__revenue'))
+            advertiser = MediaBuyerAdvertiser.objects.values_list('advertiser_id', flat=True).filter(query_filter).distinct()
+            report_filter &= Q(advertiser_id__in=advertiser)
+            reports = Reports.objects.filter(report_filter).aggregate(
+                total_cost=Sum('spend'), clicks=Sum('clicks'),
+                conversions=Sum('conversion'),
+                impressions=Sum('impressions'), revenue=Sum('revenue'))
+            # query_filter &= Q(advertiser_id__reports__report_date__gte=start_date)
+            # query_filter &= Q(advertiser_id__reports__report_date__lte=end_date)
+            # reports = MediaBuyerAdvertiser.objects.filter(query_filter).aggregate(
+            #     total_cost=Sum('advertiser_id__reports__spend'), clicks=Sum('advertiser_id__reports__clicks'),
+            #     conversions=Sum('advertiser_id__reports__conversion'),
+            #     impressions=Sum('advertiser_id__reports__impressions'), revenue=Sum('advertiser_id__reports__revenue'))
             total_conversions = reports['conversions'] if reports['conversions'] else 0
             total_cost = reports['total_cost'] if reports['total_cost'] else 0.0
             total_clicks = reports['clicks'] if reports['clicks'] else 0
@@ -172,7 +183,8 @@ class ReportView(APIView):
                 query_filter &= Q(vertical_id__details__name__icontains=name)
             reports = VerticalAdvertiser.objects.filter(query_filter).aggregate(
                 total_cost=Sum('advertiser_id__reports__spend'), clicks=Sum('advertiser_id__reports__clicks'),
-                conversions=Sum('advertiser_id__reports__conversion'), impressions=Sum('advertiser_id__reports__impressions'), revenue=Sum('advertiser_id__reports__revenue'))
+                conversions=Sum('advertiser_id__reports__conversion'),
+                impressions=Sum('advertiser_id__reports__impressions'), revenue=Sum('advertiser_id__reports__revenue'))
             total_conversions = reports['conversions'] if reports['conversions'] else 0
             total_cost = reports['total_cost'] if reports['total_cost'] else 0.0
             total_clicks = reports['clicks'] if reports['clicks'] else 0
@@ -355,6 +367,3 @@ class ReportView(APIView):
     #         response["success"] = False
     #         response["message"] = str(e)
     #     return response
-
-
-
