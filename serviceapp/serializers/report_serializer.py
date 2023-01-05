@@ -81,3 +81,22 @@ class DailyReportSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reports
         fields = ('cost', 'conversions', 'clicks', 'impressions', 'products', 'report_date', 'revenue', 'profit', 'roi')
+
+
+# class DailyTotalReportSerializer(serializers.ModelSerializer):
+#     total_cost = serializers.FloatField()
+#     clicks = serializers.IntegerField()
+#     conversion_rate = serializers.FloatField()
+#     conversions = serializers.IntegerField()
+#     cpm = serializers.FloatField()
+#     cpc = serializers.FloatField()
+#     ctr = serializers.FloatField()
+#     cpa = serializers.FloatField()
+#     revenue = serializers.FloatField()
+#     impressions = serializers.IntegerField()
+#     profit = serializers.FloatField()
+#     roi = serializers.FloatField()
+#
+#     class Meta:
+#         model = Reports
+#         fields = ('report_date', 'total_cost', 'clicks', 'conversion_rate', 'conversions', 'cpm', 'cpc', 'ctr', 'cpa', 'impressions', 'revenue', 'profit', 'roi')
