@@ -104,7 +104,7 @@ class ReportView(APIView):
             query_filter = Q()
             query_filter &= Q(report_date__gte=start_date)
             query_filter &= Q(report_date__lte=end_date)
-            order_by = 'id'
+            order_by = 'report_date'
             sort_by = False
             if 'sort_field' in request.GET:
                 sort_field = request.GET.get('sort_field')
